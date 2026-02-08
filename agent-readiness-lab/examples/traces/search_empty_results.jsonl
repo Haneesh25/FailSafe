@@ -1,0 +1,12 @@
+{"session_id": "search_empty_results_001", "goal": "Search for a product and handle empty results", "start_url": "http://webapp:3000", "expected_outcome": "User finds products after broadening search", "tags": ["search", "error-recovery"]}
+{"ts": 0.0, "action": "goto", "url": "http://webapp:3000/login"}
+{"ts": 1.0, "action": "type", "selector": "[data-testid=\"username\"]", "text": "testuser"}
+{"ts": 2.0, "action": "type", "selector": "[data-testid=\"password\"]", "text": "password123"}
+{"ts": 3.0, "action": "click", "selector": "[data-testid=\"login-submit\"]"}
+{"ts": 5.0, "action": "goto", "url": "http://webapp:3000/search"}
+{"ts": 6.0, "action": "type", "selector": "[data-testid=\"search-input\"]", "text": "nonexistent-product-xyz"}
+{"ts": 7.0, "action": "click", "selector": "[data-testid=\"search-submit\"]"}
+{"ts": 9.0, "action": "wait", "metadata": {"wait_ms": 1000}}
+{"ts": 10.0, "action": "type", "selector": "[data-testid=\"search-input\"]", "text": "laptop"}
+{"ts": 11.0, "action": "click", "selector": "[data-testid=\"search-submit\"]", "expect": {"text_visible": "Laptop"}}
+{"ts": 13.0, "action": "click", "selector": "[data-testid=\"view-laptop-1\"]", "expect": {"text_visible": "Add to Cart"}}

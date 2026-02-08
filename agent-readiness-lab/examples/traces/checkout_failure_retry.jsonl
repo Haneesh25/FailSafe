@@ -1,0 +1,17 @@
+{"session_id": "checkout_failure_retry_001", "goal": "Complete checkout with retry on failure", "start_url": "http://webapp:3000", "expected_outcome": "Order confirmed after retry", "tags": ["checkout", "error-recovery", "retry"]}
+{"ts": 0.0, "action": "goto", "url": "http://webapp:3000/login"}
+{"ts": 1.0, "action": "type", "selector": "[data-testid=\"username\"]", "text": "testuser"}
+{"ts": 2.0, "action": "type", "selector": "[data-testid=\"password\"]", "text": "password123"}
+{"ts": 3.0, "action": "click", "selector": "[data-testid=\"login-submit\"]"}
+{"ts": 5.0, "action": "goto", "url": "http://webapp:3000/products"}
+{"ts": 7.0, "action": "click", "selector": "[data-testid=\"view-phone-1\"]"}
+{"ts": 9.0, "action": "click", "selector": "[data-testid=\"add-to-cart\"]"}
+{"ts": 11.0, "action": "click", "selector": "[data-testid=\"checkout-button\"]"}
+{"ts": 13.0, "action": "type", "selector": "[data-testid=\"checkout-name\"]", "text": "Test User"}
+{"ts": 14.0, "action": "type", "selector": "[data-testid=\"checkout-email\"]", "text": "test@example.com"}
+{"ts": 15.0, "action": "type", "selector": "[data-testid=\"checkout-address\"]", "text": "456 Retry Lane"}
+{"ts": 16.0, "action": "click", "selector": "[data-testid=\"submit-order\"]"}
+{"ts": 18.0, "action": "wait", "metadata": {"wait_ms": 2000}}
+{"ts": 20.0, "action": "click", "selector": "[data-testid=\"submit-order\"]"}
+{"ts": 22.0, "action": "wait", "metadata": {"wait_ms": 2000}}
+{"ts": 24.0, "action": "click", "selector": "[data-testid=\"submit-order\"]", "expect": {"text_visible": "Order Confirmed"}}

@@ -1,0 +1,15 @@
+{"session_id": "successful_checkout_001", "goal": "Complete a purchase of a laptop", "start_url": "http://webapp:3000", "expected_outcome": "Order confirmed page displayed", "tags": ["checkout", "happy-path"]}
+{"ts": 0.0, "action": "goto", "url": "http://webapp:3000/login"}
+{"ts": 1.0, "action": "type", "selector": "[data-testid=\"username\"]", "text": "testuser"}
+{"ts": 2.0, "action": "type", "selector": "[data-testid=\"password\"]", "text": "password123"}
+{"ts": 3.0, "action": "click", "selector": "[data-testid=\"login-submit\"]", "expect": {"url_contains": "/"}}
+{"ts": 5.0, "action": "goto", "url": "http://webapp:3000/search"}
+{"ts": 6.0, "action": "type", "selector": "[data-testid=\"search-input\"]", "text": "laptop"}
+{"ts": 7.0, "action": "click", "selector": "[data-testid=\"search-submit\"]", "expect": {"text_visible": "laptop"}}
+{"ts": 9.0, "action": "click", "selector": "[data-testid=\"view-laptop-1\"]"}
+{"ts": 11.0, "action": "click", "selector": "[data-testid=\"add-to-cart\"]", "expect": {"url_contains": "/cart"}}
+{"ts": 13.0, "action": "click", "selector": "[data-testid=\"checkout-button\"]", "expect": {"url_contains": "/checkout"}}
+{"ts": 15.0, "action": "type", "selector": "[data-testid=\"checkout-name\"]", "text": "Test User"}
+{"ts": 16.0, "action": "type", "selector": "[data-testid=\"checkout-email\"]", "text": "test@example.com"}
+{"ts": 17.0, "action": "type", "selector": "[data-testid=\"checkout-address\"]", "text": "123 Test Street"}
+{"ts": 18.0, "action": "click", "selector": "[data-testid=\"submit-order\"]", "expect": {"text_visible": "Order Confirmed"}}
