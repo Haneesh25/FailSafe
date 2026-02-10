@@ -4,884 +4,549 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AgentPact</title>
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 <style>
-  /* ── Reset & Base ──────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:        #0a0a0a;
-    --bg-card:   #111111;
-    --bg-hover:  #1a1a1a;
-    --border:    #222222;
-    --border-l:  #333333;
-    --text:      #e5e5e5;
-    --text-dim:  #777777;
-    --text-muted:#555555;
-    --accent:    #3b82f6;
-    --green:     #22c55e;
-    --red:       #ef4444;
-    --orange:    #f59e0b;
-    --purple:    #a855f7;
-    --radius:    12px;
-    --radius-sm: 8px;
-    --font:      -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
-    --mono:      'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    --bg:         #09090b;
+    --bg-raised:  #0f0f12;
+    --bg-card:    #131316;
+    --bg-hover:   #1a1a1f;
+    --bg-input:   #18181b;
+    --border:     rgba(255,255,255,0.06);
+    --border-l:   rgba(255,255,255,0.08);
+    --border-xl:  rgba(255,255,255,0.12);
+    --text:       #fafafa;
+    --text-2:     #a1a1aa;
+    --text-3:     #71717a;
+    --text-4:     #52525b;
+    --accent:     #818cf8;
+    --accent-bg:  rgba(129,140,248,0.08);
+    --green:      #4ade80;
+    --green-bg:   rgba(74,222,128,0.08);
+    --red:        #f87171;
+    --red-bg:     rgba(248,113,113,0.08);
+    --amber:      #fbbf24;
+    --amber-bg:   rgba(251,191,36,0.08);
+    --r:          12px;
+    --r-sm:       8px;
+    --r-xs:       6px;
   }
 
   body {
-    font-family: var(--font);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
+    font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04';
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* ── Layout ────────────────────────────────────────── */
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  /* ── Header ────────────────────────────────────────── */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 16px 0;
-    position: sticky;
-    top: 0;
-    background: rgba(10, 10, 10, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    z-index: 100;
-  }
-
-  .header-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-
-  .logo-icon {
-    width: 28px;
-    height: 28px;
-    background: linear-gradient(135deg, var(--accent), var(--purple));
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     font-size: 14px;
-    color: white;
-    font-weight: 700;
   }
 
-  .header-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-dim);
-  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
 
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 2s ease-in-out infinite;
+  /* ─── Nav ──────────────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(9,9,11,0.8);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
   }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px;
   }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%);
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 12px; color: #fff;
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.3), 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .brand-name {
+    font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--text);
+  }
+  .nav-meta {
+    display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-3);
+  }
+  .nav-meta .live {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 6px rgba(74,222,128,0.4);
+    animation: blink 2.5s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  /* ── Stats Row ─────────────────────────────────────── */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
+  /* ─── Stats ────────────────────────────────────────── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 1px;
     background: var(--border);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--r);
     overflow: hidden;
-    margin: 24px 0;
+    margin: 28px 0 0;
   }
-
-  .stat {
-    background: var(--bg-card);
-    padding: 20px 24px;
-    transition: background 0.15s;
+  .stat-cell {
+    background: var(--bg-card); padding: 22px 24px;
+    transition: background .15s;
   }
-
-  .stat:hover { background: var(--bg-hover); }
-
-  .stat-value {
-    font-size: 32px;
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
+  .stat-cell:hover { background: var(--bg-hover); }
+  .stat-num {
+    font-size: 28px; font-weight: 600; letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums; line-height: 1.15;
   }
+  .stat-lbl { font-size: 12px; color: var(--text-3); margin-top: 2px; letter-spacing: 0.01em; }
+  .c-green { color: var(--green); }
+  .c-red { color: var(--red); }
+  .c-amber { color: var(--amber); }
 
-  .stat-label {
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-top: 4px;
+  /* ─── Section ──────────────────────────────────────── */
+  .sec { margin-top: 36px; }
+  .sec-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px;
   }
-
-  .stat-value.green { color: var(--green); }
-  .stat-value.red { color: var(--red); }
-  .stat-value.orange { color: var(--orange); }
-
-  /* ── Section Headers ───────────────────────────────── */
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 32px 0 16px;
+  .sec-title {
+    font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -0.005em;
   }
+  .sec-sub { font-size: 12px; color: var(--text-4); }
 
-  .section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -0.01em;
+  /* ─── Pipeline ─────────────────────────────────────── */
+  .pipeline-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 36px 28px;
+    position: relative; overflow: hidden;
   }
-
-  .section-subtitle {
-    font-size: 13px;
-    color: var(--text-dim);
+  .pipeline-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+    opacity: 0.25;
   }
-
-  /* ── Pipeline Visualization ────────────────────────── */
-  .pipeline {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 32px 24px;
-    margin-bottom: 24px;
+  .pl-row {
+    display: flex; align-items: center; justify-content: center; gap: 0;
   }
-
-  .pipeline-nodes {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    flex-wrap: wrap;
+  .pl-node {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    min-width: 120px; padding: 0 8px;
   }
-
-  .pipeline-node {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 16px 20px;
-    min-width: 140px;
+  .pl-avatar {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3);
   }
-
-  .node-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 600;
-    color: white;
+  .pl-avatar.n0 { background: linear-gradient(135deg, #6366f1, #818cf8); }
+  .pl-avatar.n1 { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+  .pl-avatar.n2 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .pl-avatar.n3 { background: linear-gradient(135deg, #10b981, #34d399); }
+  .pl-name { font-size: 12px; font-weight: 500; color: var(--text); text-align: center; }
+  .pl-role {
+    font-size: 10px; font-weight: 500; color: var(--text-4);
+    background: var(--bg-hover); padding: 2px 7px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.04em;
   }
-
-  .node-avatar.cs { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-  .node-avatar.ra { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
-  .node-avatar.ta { background: linear-gradient(135deg, #f59e0b, #ef4444); }
-  .node-avatar.ca { background: linear-gradient(135deg, #22c55e, #10b981); }
-
-  .node-name {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    text-align: center;
+  .pl-edge {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 0 6px; min-width: 64px;
   }
-
-  .node-role {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: center;
+  .pl-line {
+    width: 44px; height: 1.5px; border-radius: 1px; position: relative;
+    transition: background .3s;
   }
-
-  .pipeline-edge {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 0 4px;
-    min-width: 60px;
+  .pl-line::after {
+    content: ''; position: absolute; right: -2px; top: -3.5px;
+    border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent;
+    transition: border-color .3s;
   }
+  .pl-line.idle { background: var(--border-xl); }
+  .pl-line.idle::after { border-left: 6px solid var(--border-xl); }
+  .pl-line.ok { background: var(--green); }
+  .pl-line.ok::after { border-left: 6px solid var(--green); }
+  .pl-line.err { background: var(--red); }
+  .pl-line.err::after { border-left: 6px solid var(--red); }
+  .pl-ctr { font-size: 10px; font-weight: 500; color: var(--text-4); font-variant-numeric: tabular-nums; }
 
-  .edge-line {
-    width: 48px;
-    height: 2px;
-    border-radius: 1px;
-    position: relative;
-  }
-
-  .edge-line::after {
-    content: '';
-    position: absolute;
-    right: -1px;
-    top: -3px;
-    width: 0;
-    height: 0;
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-  }
-
-  .edge-line.pass { background: var(--green); }
-  .edge-line.pass::after { border-left: 6px solid var(--green); }
-  .edge-line.fail { background: var(--red); }
-  .edge-line.fail::after { border-left: 6px solid var(--red); }
-  .edge-line.idle { background: var(--border-l); }
-  .edge-line.idle::after { border-left: 6px solid var(--border-l); }
-
-  .edge-label {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--text-muted);
-  }
-
-  /* ── Simulate Buttons ──────────────────────────────── */
-  .actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
+  /* ─── Actions ──────────────────────────────────────── */
+  .act-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn {
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 16px;
-    border: 1px solid var(--border-l);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    color: var(--text);
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    padding: 7px 14px; border-radius: var(--r-xs);
+    border: 1px solid var(--border-l); background: var(--bg-card);
+    color: var(--text-2); cursor: pointer;
+    transition: all .12s ease; outline: none;
+  }
+  .btn:hover { background: var(--bg-hover); border-color: var(--border-xl); color: var(--text); }
+  .btn:active { transform: scale(0.97); }
+  .btn.accent {
+    background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.25);
+    color: var(--accent);
+  }
+  .btn.accent:hover {
+    background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.35);
   }
 
-  .btn:hover {
-    background: var(--bg-hover);
-    border-color: var(--text-muted);
+  /* ─── Cards ────────────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--r); overflow: hidden;
   }
+  .card-head {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; font-weight: 600; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .card-head .count { font-weight: 400; color: var(--text-4); text-transform: none; letter-spacing: 0; }
 
-  .btn:active {
-    transform: scale(0.97);
+  /* ─── Violations ───────────────────────────────────── */
+  .v-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-bottom: 1px solid var(--border);
+    font-size: 13px; transition: background .1s;
   }
+  .v-row:last-child { border-bottom: none; }
+  .v-row:hover { background: var(--bg-hover); }
+  .sev {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  .sev.critical { background: var(--red-bg); color: var(--red); }
+  .sev.high { background: var(--amber-bg); color: var(--amber); }
+  .sev.medium { background: rgba(129,140,248,0.08); color: var(--accent); }
+  .v-id { font-size: 12px; color: var(--text-3); min-width: 96px; font-variant-numeric: tabular-nums; }
+  .v-msg { flex: 1; color: var(--text-3); font-size: 12px; }
+  .v-ct { font-size: 12px; color: var(--text-4); font-variant-numeric: tabular-nums; margin-left: auto; }
 
-  .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
+  /* ─── Agent Bars ───────────────────────────────────── */
+  .ab-list { padding: 14px 18px; }
+  .ab-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .ab-row:last-child { margin-bottom: 0; }
+  .ab-name {
+    font-size: 12px; color: var(--text-3); min-width: 100px;
+    text-align: right; font-variant-numeric: tabular-nums;
   }
+  .ab-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; display: flex; }
+  .ab-bar { height: 100%; transition: width .5s ease; }
+  .ab-bar.g { background: var(--green); }
+  .ab-bar.r { background: var(--red); }
+  .ab-total { font-size: 11px; color: var(--text-4); min-width: 28px; font-variant-numeric: tabular-nums; }
 
-  .btn.primary:hover {
-    background: #2563eb;
-    border-color: #2563eb;
+  /* ─── Audit Trail ──────────────────────────────────── */
+  .h-head {
+    display: grid; grid-template-columns: 56px 1fr 80px 52px;
+    gap: 10px; padding: 10px 18px; font-size: 11px;
+    color: var(--text-4); text-transform: uppercase; letter-spacing: 0.04em;
+    font-weight: 600; border-bottom: 1px solid var(--border);
   }
+  .h-row {
+    display: grid; grid-template-columns: 56px 1fr 80px 52px;
+    gap: 10px; align-items: center;
+    padding: 9px 18px; border-bottom: 1px solid var(--border);
+    font-size: 13px; transition: background .1s;
+  }
+  .h-row:last-child { border-bottom: none; }
+  .h-row:hover { background: var(--bg-hover); }
+  .badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+    text-align: center; width: fit-content;
+  }
+  .badge.pass { background: var(--green-bg); color: var(--green); }
+  .badge.fail { background: var(--red-bg); color: var(--red); }
+  .h-agents { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .h-arrow { color: var(--text-4); }
+  .h-time { font-size: 11px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+  .h-viol { font-size: 12px; color: var(--text-4); text-align: right; font-variant-numeric: tabular-nums; }
 
-  /* ── Two Column Layout ─────────────────────────────── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 24px;
+  /* ─── Scrollable ───────────────────────────────────── */
+  .scroll { max-height: 380px; overflow-y: auto; }
+  .scroll::-webkit-scrollbar { width: 5px; }
+  .scroll::-webkit-scrollbar-track { background: transparent; }
+  .scroll::-webkit-scrollbar-thumb { background: var(--border-xl); border-radius: 3px; }
+
+  /* ─── Toast ────────────────────────────────────────── */
+  .toast-wrap {
+    position: fixed; bottom: 20px; right: 20px; z-index: 200;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
   }
+  .toast {
+    pointer-events: auto;
+    background: var(--bg-card); border: 1px solid var(--border-l);
+    border-radius: var(--r-sm); padding: 10px 16px; font-size: 13px;
+    max-width: 340px; color: var(--text-2);
+    animation: tin .25s ease, tout .25s ease 2.75s forwards;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  .toast.ok { border-left: 3px solid var(--green); }
+  .toast.err { border-left: 3px solid var(--red); }
+  @keyframes tin { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes tout { from{opacity:1} to{opacity:0} }
+
+  .empty { padding: 28px 18px; text-align: center; color: var(--text-4); font-size: 13px; }
 
   @media (max-width: 768px) {
-    .two-col { grid-template-columns: 1fr; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .pl-row { flex-wrap: wrap; justify-content: center; }
   }
 
-  /* ── Violations Table ──────────────────────────────── */
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .violation-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-    transition: background 0.1s;
-  }
-
-  .violation-row:last-child { border-bottom: none; }
-  .violation-row:hover { background: var(--bg-hover); }
-
-  .severity-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    flex-shrink: 0;
-  }
-
-  .severity-badge.critical { background: rgba(239, 68, 68, 0.15); color: var(--red); }
-  .severity-badge.high { background: rgba(245, 158, 11, 0.15); color: var(--orange); }
-  .severity-badge.medium { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
-  .severity-badge.low { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
-
-  .violation-id {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text-dim);
-    min-width: 100px;
-  }
-
-  .violation-count {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  /* ── Handoff List ──────────────────────────────────── */
-  .handoff-row {
-    display: grid;
-    grid-template-columns: 60px 1fr 80px 60px;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-    transition: background 0.1s;
-  }
-
-  .handoff-row:last-child { border-bottom: none; }
-  .handoff-row:hover { background: var(--bg-hover); }
-
-  .result-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    text-align: center;
-  }
-
-  .result-badge.pass { background: rgba(34, 197, 94, 0.12); color: var(--green); }
-  .result-badge.fail { background: rgba(239, 68, 68, 0.12); color: var(--red); }
-  .result-badge.warn { background: rgba(245, 158, 11, 0.12); color: var(--orange); }
-
-  .handoff-agents {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .handoff-arrow {
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .handoff-agent {
-    font-size: 12px;
-    font-family: var(--mono);
-  }
-
-  .handoff-time {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-family: var(--mono);
-  }
-
-  .handoff-violations {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text-dim);
-    text-align: right;
-  }
-
-  /* ── Bar Chart ─────────────────────────────────────── */
-  .bar-chart {
-    padding: 16px 20px;
-  }
-
-  .bar-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-
-  .bar-label {
-    font-size: 12px;
-    color: var(--text-dim);
-    min-width: 120px;
-    font-family: var(--mono);
-    text-align: right;
-  }
-
-  .bar-track {
-    flex: 1;
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.5s ease;
-  }
-
-  .bar-fill.green { background: var(--green); }
-  .bar-fill.red { background: var(--red); }
-  .bar-fill.orange { background: var(--orange); }
-  .bar-fill.purple { background: var(--purple); }
-
-  .bar-value {
-    font-size: 12px;
-    font-family: var(--mono);
-    color: var(--text-dim);
-    min-width: 36px;
-  }
-
-  /* ── Toast ─────────────────────────────────────────── */
-  .toast-container {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 200;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .toast {
-    background: var(--bg-card);
-    border: 1px solid var(--border-l);
-    border-radius: var(--radius-sm);
-    padding: 12px 20px;
-    font-size: 13px;
-    animation: toast-in 0.3s ease, toast-out 0.3s ease 2.7s;
-    max-width: 360px;
-  }
-
-  .toast.pass { border-left: 3px solid var(--green); }
-  .toast.fail { border-left: 3px solid var(--red); }
-
-  @keyframes toast-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes toast-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-
-  /* ── Scrollbar ─────────────────────────────────────── */
-  .scroll-area {
-    max-height: 400px;
-    overflow-y: auto;
-  }
-
-  .scroll-area::-webkit-scrollbar { width: 6px; }
-  .scroll-area::-webkit-scrollbar-track { background: transparent; }
-  .scroll-area::-webkit-scrollbar-thumb { background: var(--border-l); border-radius: 3px; }
-
-  /* ── Empty state ───────────────────────────────────── */
-  .empty {
-    padding: 32px 20px;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 13px;
-  }
-
-  /* ── Loading shimmer ───────────────────────────────── */
-  .loading {
-    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
+  .footer { height: 64px; }
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<header>
-  <div class="container header-inner">
-    <div class="logo">
-      <div class="logo-icon">A</div>
-      <span>AgentPact</span>
+<nav>
+  <div class="wrap nav-inner">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <span class="brand-name">AgentPact</span>
     </div>
-    <div class="header-status">
-      <div class="status-dot"></div>
-      <span id="agent-count">4 agents</span> &middot; <span id="contract-count">3 contracts</span>
+    <div class="nav-meta">
+      <span class="live"><span class="live-dot"></span> Monitoring</span>
+      <span id="nav-info">4 agents &middot; 3 contracts</span>
     </div>
   </div>
-</header>
+</nav>
 
-<div class="container">
+<div class="wrap">
 
-  <!-- Stats -->
-  <div class="stats" id="stats">
-    <div class="stat">
-      <div class="stat-value" id="stat-total">—</div>
-      <div class="stat-label">Total Handoffs</div>
+  <div class="stats-grid" id="stats">
+    <div class="stat-cell">
+      <div class="stat-num" id="s-total">&mdash;</div>
+      <div class="stat-lbl">Total Handoffs</div>
     </div>
-    <div class="stat">
-      <div class="stat-value green" id="stat-pass">—</div>
-      <div class="stat-label">Passed</div>
+    <div class="stat-cell">
+      <div class="stat-num c-green" id="s-pass">&mdash;</div>
+      <div class="stat-lbl">Passed</div>
     </div>
-    <div class="stat">
-      <div class="stat-value red" id="stat-fail">—</div>
-      <div class="stat-label">Failed</div>
+    <div class="stat-cell">
+      <div class="stat-num c-red" id="s-fail">&mdash;</div>
+      <div class="stat-lbl">Failed</div>
     </div>
-    <div class="stat">
-      <div class="stat-value orange" id="stat-blocked">—</div>
-      <div class="stat-label">Blocked</div>
+    <div class="stat-cell">
+      <div class="stat-num c-amber" id="s-block">&mdash;</div>
+      <div class="stat-lbl">Blocked</div>
     </div>
   </div>
 
-  <!-- Pipeline -->
-  <div class="section-header">
-    <span class="section-title">Agent Pipeline</span>
-    <span class="section-subtitle">Contract-validated handoff chain</span>
-  </div>
-
-  <div class="pipeline">
-    <div class="pipeline-nodes" id="pipeline">
-      <div class="pipeline-node">
-        <div class="node-avatar cs">CS</div>
-        <div class="node-name">Customer Service</div>
-        <div class="node-role">READ_ONLY</div>
-      </div>
-      <div class="pipeline-edge">
-        <div class="edge-line idle" id="edge-cs-ra"></div>
-        <div class="edge-label">CTR-001</div>
-      </div>
-      <div class="pipeline-node">
-        <div class="node-avatar ra">RA</div>
-        <div class="node-name">Research</div>
-        <div class="node-role">READ_WRITE</div>
-      </div>
-      <div class="pipeline-edge">
-        <div class="edge-line idle" id="edge-ra-ta"></div>
-        <div class="edge-label">CTR-002</div>
-      </div>
-      <div class="pipeline-node">
-        <div class="node-avatar ta">TA</div>
-        <div class="node-name">Trading</div>
-        <div class="node-role">EXECUTE</div>
-      </div>
-      <div class="pipeline-edge">
-        <div class="edge-line idle" id="edge-ta-ca"></div>
-        <div class="edge-label">CTR-003</div>
-      </div>
-      <div class="pipeline-node">
-        <div class="node-avatar ca">CA</div>
-        <div class="node-name">Compliance</div>
-        <div class="node-role">ADMIN</div>
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-title">Agent Pipeline</span>
+      <span class="sec-sub">Contract-validated handoff chain</span>
+    </div>
+    <div class="pipeline-card">
+      <div class="pl-row">
+        <div class="pl-node">
+          <div class="pl-avatar n0">CS</div>
+          <div class="pl-name">Customer Service</div>
+          <div class="pl-role">Read Only</div>
+        </div>
+        <div class="pl-edge">
+          <div class="pl-line idle" id="e0"></div>
+          <div class="pl-ctr">CTR-001</div>
+        </div>
+        <div class="pl-node">
+          <div class="pl-avatar n1">RA</div>
+          <div class="pl-name">Research</div>
+          <div class="pl-role">Read Write</div>
+        </div>
+        <div class="pl-edge">
+          <div class="pl-line idle" id="e1"></div>
+          <div class="pl-ctr">CTR-002</div>
+        </div>
+        <div class="pl-node">
+          <div class="pl-avatar n2">TA</div>
+          <div class="pl-name">Trading</div>
+          <div class="pl-role">Execute</div>
+        </div>
+        <div class="pl-edge">
+          <div class="pl-line idle" id="e2"></div>
+          <div class="pl-ctr">CTR-003</div>
+        </div>
+        <div class="pl-node">
+          <div class="pl-avatar n3">CA</div>
+          <div class="pl-name">Compliance</div>
+          <div class="pl-role">Admin</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Simulate -->
-  <div class="section-header">
-    <span class="section-title">Simulate</span>
-    <span class="section-subtitle">Run validation scenarios in real-time</span>
-  </div>
-
-  <div class="actions" style="margin-bottom: 24px;">
-    <button class="btn primary" onclick="simulate('happy')">Valid Handoff</button>
-    <button class="btn" onclick="simulate('ssn_leak')">SSN Leak</button>
-    <button class="btn" onclick="simulate('large_tx')">Large Transaction</button>
-    <button class="btn" onclick="simulate('authority_escalation')">Authority Escalation</button>
-  </div>
-
-  <!-- Two column: Violations + Agent Stats -->
-  <div class="two-col">
-    <!-- Top Violations -->
-    <div class="card">
-      <div class="card-header">
-        <span>Top Violations</span>
-        <span class="section-subtitle" id="violation-total"></span>
-      </div>
-      <div class="scroll-area" id="violations-list">
-        <div class="empty">Loading...</div>
-      </div>
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-title">Simulate</span>
+      <span class="sec-sub">Run validation scenarios</span>
     </div>
+    <div class="act-row">
+      <button class="btn accent" onclick="sim('happy')">Valid Handoff</button>
+      <button class="btn" onclick="sim('ssn_leak')">SSN Leak</button>
+      <button class="btn" onclick="sim('large_tx')">Large Transaction</button>
+      <button class="btn" onclick="sim('authority_escalation')">Authority Escalation</button>
+    </div>
+  </div>
 
-    <!-- Agent Breakdown -->
-    <div class="card">
-      <div class="card-header">
-        <span>Agent Activity</span>
+  <div class="sec">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <span>Top Violations</span>
+          <span class="count" id="viol-ct"></span>
+        </div>
+        <div class="scroll" id="viol-list"><div class="empty">Loading</div></div>
       </div>
-      <div class="bar-chart" id="agent-bars">
-        <div class="empty">Loading...</div>
+      <div class="card">
+        <div class="card-head"><span>Agent Activity</span></div>
+        <div class="ab-list" id="ab-list"><div class="empty">Loading</div></div>
       </div>
     </div>
   </div>
 
-  <!-- Handoff Log -->
-  <div class="section-header">
-    <span class="section-title">Audit Trail</span>
-    <span class="section-subtitle" id="handoff-count"></span>
-  </div>
-
-  <div class="card" style="margin-bottom: 48px;">
-    <div class="scroll-area" id="handoff-list">
-      <div class="empty">Loading...</div>
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-title">Audit Trail</span>
+      <span class="sec-sub" id="h-ct"></span>
+    </div>
+    <div class="card" style="margin-bottom: 0;">
+      <div class="h-head">
+        <span>Status</span><span>Handoff</span><span>Time</span><span style="text-align:right">Issues</span>
+      </div>
+      <div class="scroll" id="h-list"><div class="empty">Loading</div></div>
     </div>
   </div>
 
+  <div class="footer"></div>
 </div>
 
-<!-- Toast container -->
-<div class="toast-container" id="toasts"></div>
+<div class="toast-wrap" id="toasts"></div>
 
 <script>
-  // ── API ────────────────────────────────────────────────
-  async function fetchJSON(url) {
-    const r = await fetch(url);
-    return r.json();
+const F = url => fetch(url).then(r => r.json());
+const $ = id => document.getElementById(id);
+
+const NAMES = {
+  customer_service: 'customer_svc',
+  research_agent: 'research',
+  trading_agent: 'trading',
+  compliance_agent: 'compliance',
+};
+const sn = n => NAMES[n] || n;
+const trunc = (s, n) => s.length > n ? s.slice(0, n) + '\u2026' : s;
+
+function renderStats(d) {
+  const s = d.summary;
+  $('s-total').textContent = s.total_handoffs;
+  $('s-pass').textContent = s.passed;
+  $('s-fail').textContent = s.failed;
+  $('s-block').textContent = s.blocked;
+}
+
+function renderViolations(d) {
+  const el = $('viol-list');
+  const items = (d.violations && d.violations.top_violations) || [];
+  $('viol-ct').textContent = items.length ? items.length + ' types' : '';
+  if (!items.length) { el.innerHTML = '<div class="empty">No violations</div>'; return; }
+  el.innerHTML = items.map(v => {
+    const rid = (v.rule || '').split(':')[0].trim();
+    const rname = (v.rule || '').split(':').slice(1).join(':').trim();
+    const s = rid.match(/^FIN-PII|^FIN-AUTH-00[12]|^FIN-DATA|^FIN-AUDIT-002|^CONTRACT/) ? 'critical'
+      : rid.match(/^FIN-|^SCHEMA_00[13]|^AUTH_/) ? 'high' : 'medium';
+    return `<div class="v-row">
+      <span class="sev ${s}">${s}</span>
+      <span class="v-id">${rid}</span>
+      <span class="v-msg">${trunc(rname || rid, 44)}</span>
+      <span class="v-ct">${v.count}&times;</span>
+    </div>`;
+  }).join('');
+}
+
+function renderAgents(d) {
+  const el = $('ab-list');
+  const agents = d.agents || {};
+  const names = Object.keys(agents);
+  if (!names.length) { el.innerHTML = '<div class="empty">No data</div>'; return; }
+  const mx = Math.max(...names.map(n => agents[n].total || 1));
+  el.innerHTML = names.map(n => {
+    const a = agents[n];
+    const pw = ((a.passed / mx) * 100).toFixed(1);
+    const fw = ((a.failed / mx) * 100).toFixed(1);
+    return `<div class="ab-row">
+      <span class="ab-name">${sn(n)}</span>
+      <div class="ab-track">
+        <div class="ab-bar g" style="width:${pw}%"></div>
+        <div class="ab-bar r" style="width:${fw}%"></div>
+      </div>
+      <span class="ab-total">${a.total}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderHandoffs(list) {
+  const el = $('h-list');
+  $('h-ct').textContent = list.length + ' records';
+  if (!list.length) { el.innerHTML = '<div class="empty">No handoffs</div>'; return; }
+  el.innerHTML = [...list].reverse().map(h => {
+    const r = h.result || 'pass';
+    const t = h.timestamp ? new Date(h.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+    return `<div class="h-row">
+      <span class="badge ${r}">${r}</span>
+      <div class="h-agents">
+        <span>${sn(h.consumer)}</span>
+        <span class="h-arrow">\u2192</span>
+        <span>${sn(h.provider)}</span>
+      </div>
+      <span class="h-time">${t}</span>
+      <span class="h-viol">${h.total_violations}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateEdges(list) {
+  const m = {'customer_service:research_agent':'e0','research_agent:trading_agent':'e1','trading_agent:compliance_agent':'e2'};
+  Object.values(m).forEach(id => { const e = $(id); if(e) e.className = 'pl-line idle'; });
+  for (const h of list) {
+    const k = h.consumer + ':' + h.provider;
+    const id = m[k]; if (!id) continue;
+    const e = $(id); if (!e) continue;
+    e.className = 'pl-line ' + (h.blocked ? 'err' : h.result === 'pass' ? 'ok' : 'err');
   }
+}
 
-  // ── Render ─────────────────────────────────────────────
-  function renderStats(summary) {
-    const s = summary.summary;
-    document.getElementById('stat-total').textContent = s.total_handoffs;
-    document.getElementById('stat-pass').textContent = s.passed;
-    document.getElementById('stat-fail').textContent = s.failed;
-    document.getElementById('stat-blocked').textContent = s.blocked;
-  }
+function toast(msg, ok) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (ok ? 'ok' : 'err');
+  t.textContent = msg;
+  $('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
 
-  function renderViolations(summary) {
-    const el = document.getElementById('violations-list');
-    const violations = (summary.violations && summary.violations.top_violations) || [];
-    const totalEl = document.getElementById('violation-total');
+async function sim(scenario) {
+  try {
+    const d = await fetch('/api/simulate/' + scenario, {method:'POST'}).then(r=>r.json());
+    if (d.error) { toast('Error: ' + d.error, false); return; }
+    const lbl = {happy:'Valid handoff',ssn_leak:'SSN leak',large_tx:'Large transaction',authority_escalation:'Authority escalation'}[scenario] || scenario;
+    toast(lbl + (d.result === 'pass' ? ': Passed' : ': ' + (d.blocked ? 'Blocked' : 'Failed')) + ' \u2014 ' + d.total_violations + ' violations', d.result === 'pass');
+    await load();
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
 
-    if (!violations.length) {
-      el.innerHTML = '<div class="empty">No violations recorded</div>';
-      return;
-    }
+async function load() {
+  const [summary, handoffs] = await Promise.all([F('/api/summary'), F('/api/handoffs')]);
+  renderStats(summary);
+  renderViolations(summary);
+  renderAgents(summary);
+  renderHandoffs(handoffs);
+  updateEdges(handoffs);
+}
 
-    totalEl.textContent = `${violations.length} types`;
-
-    el.innerHTML = violations.map(v => {
-      // rule format is "RULE_ID: Rule Name" — extract the ID and severity from the rule string
-      const ruleStr = v.rule || '';
-      const ruleId = ruleStr.split(':')[0].trim();
-      const ruleName = ruleStr.split(':').slice(1).join(':').trim();
-      // Guess severity from rule ID
-      const sev = ruleId.startsWith('FIN-PII') || ruleId.startsWith('FIN-AUTH-001') || ruleId.startsWith('FIN-AUTH-002') || ruleId.startsWith('FIN-DATA') || ruleId.startsWith('FIN-AUDIT-002') ? 'critical'
-        : ruleId.startsWith('FIN-') ? 'high'
-        : ruleId.startsWith('SCHEMA_001') || ruleId.startsWith('CONTRACT') ? 'high'
-        : ruleId.startsWith('AUTH_') ? 'high'
-        : 'medium';
-      return `<div class="violation-row">
-        <span class="severity-badge ${sev}">${sev}</span>
-        <span class="violation-id">${ruleId}</span>
-        <span style="flex:1;color:var(--text-dim)">${truncate(ruleName || ruleId, 50)}</span>
-        <span class="violation-count">${v.count}x</span>
-      </div>`;
-    }).join('');
-  }
-
-  function renderAgentBars(summary) {
-    const el = document.getElementById('agent-bars');
-    const agents = summary.agents || {};
-    const names = Object.keys(agents);
-
-    if (!names.length) {
-      el.innerHTML = '<div class="empty">No agent data</div>';
-      return;
-    }
-
-    const maxTotal = Math.max(...names.map(n => agents[n].total || 1));
-
-    el.innerHTML = names.map(name => {
-      const a = agents[name];
-      const passW = ((a.passed / maxTotal) * 100).toFixed(1);
-      const failW = ((a.failed / maxTotal) * 100).toFixed(1);
-      return `<div class="bar-row">
-        <span class="bar-label">${shortName(name)}</span>
-        <div class="bar-track">
-          <div class="bar-fill green" style="width:${passW}%;display:inline-block"></div>
-          <div class="bar-fill red" style="width:${failW}%;display:inline-block"></div>
-        </div>
-        <span class="bar-value">${a.total}</span>
-      </div>`;
-    }).join('');
-  }
-
-  function renderHandoffs(handoffs) {
-    const el = document.getElementById('handoff-list');
-    const countEl = document.getElementById('handoff-count');
-
-    countEl.textContent = `${handoffs.length} records`;
-
-    if (!handoffs.length) {
-      el.innerHTML = '<div class="empty">No handoffs recorded</div>';
-      return;
-    }
-
-    // Newest first
-    const sorted = [...handoffs].reverse();
-
-    el.innerHTML = sorted.map(h => {
-      const result = h.result || 'pass';
-      const time = h.timestamp ? new Date(h.timestamp).toLocaleTimeString() : '';
-      return `<div class="handoff-row">
-        <span class="result-badge ${result}">${result}</span>
-        <div class="handoff-agents">
-          <span class="handoff-agent">${shortName(h.consumer)}</span>
-          <span class="handoff-arrow">&rarr;</span>
-          <span class="handoff-agent">${shortName(h.provider)}</span>
-        </div>
-        <span class="handoff-time">${time}</span>
-        <span class="handoff-violations">${h.total_violations}v</span>
-      </div>`;
-    }).join('');
-  }
-
-  function updateEdges(handoffs) {
-    const edgeMap = {
-      'customer_service:research_agent': 'edge-cs-ra',
-      'research_agent:trading_agent': 'edge-ra-ta',
-      'trading_agent:compliance_agent': 'edge-ta-ca',
-    };
-
-    // Reset
-    Object.values(edgeMap).forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.className = 'edge-line idle';
-    });
-
-    // Set based on most recent handoff per edge
-    for (const h of handoffs) {
-      const key = `${h.consumer}:${h.provider}`;
-      const elId = edgeMap[key];
-      if (elId) {
-        const el = document.getElementById(elId);
-        if (el) {
-          el.className = `edge-line ${h.blocked ? 'fail' : (h.result === 'pass' ? 'pass' : 'fail')}`;
-        }
-      }
-    }
-  }
-
-  // ── Helpers ────────────────────────────────────────────
-  function shortName(name) {
-    const map = {
-      'customer_service': 'customer_svc',
-      'research_agent': 'research',
-      'trading_agent': 'trading',
-      'compliance_agent': 'compliance',
-    };
-    return map[name] || name;
-  }
-
-  function truncate(s, n) {
-    return s.length > n ? s.slice(0, n) + '...' : s;
-  }
-
-  // ── Toast ──────────────────────────────────────────────
-  function showToast(message, type) {
-    const container = document.getElementById('toasts');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
-
-  // ── Simulate ───────────────────────────────────────────
-  async function simulate(scenario) {
-    try {
-      const r = await fetch(`/api/simulate/${scenario}`, { method: 'POST' });
-      const data = await r.json();
-
-      if (data.error) {
-        showToast(`Error: ${data.error}`, 'fail');
-        return;
-      }
-
-      const result = data.result || 'pass';
-      const blocked = data.blocked || false;
-      const label = {
-        happy: 'Valid handoff',
-        ssn_leak: 'SSN leak test',
-        large_tx: 'Large transaction',
-        authority_escalation: 'Authority escalation',
-      }[scenario] || scenario;
-
-      if (result === 'pass') {
-        showToast(`${label}: PASSED — ${data.total_violations} violations`, 'pass');
-      } else {
-        showToast(`${label}: ${blocked ? 'BLOCKED' : 'FAILED'} — ${data.total_violations} violations`, 'fail');
-      }
-
-      // Refresh data
-      await refresh();
-    } catch (e) {
-      showToast(`Error: ${e.message}`, 'fail');
-    }
-  }
-
-  // ── Refresh ────────────────────────────────────────────
-  async function refresh() {
-    const [summary, handoffs] = await Promise.all([
-      fetchJSON('/api/summary'),
-      fetchJSON('/api/handoffs'),
-    ]);
-
-    renderStats(summary);
-    renderViolations(summary);
-    renderAgentBars(summary);
-    renderHandoffs(handoffs);
-    updateEdges(handoffs);
-  }
-
-  // ── Init ───────────────────────────────────────────────
-  refresh();
+load();
 </script>
 </body>
 </html>
