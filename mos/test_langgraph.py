@@ -23,9 +23,9 @@ from agentpact.interceptor.middleware import HandoffBlockedError
 from agentpact.audit.logger import AuditLogger
 from agentpact.integrations.langgraph import (
     ValidatedGraph,
-    AGENTPACT_STATE_KEY,
-    AGENTPACT_RESULTS_KEY,
-    AGENTPACT_METADATA_KEY,
+    FAILSAFE_STATE_KEY,
+    FAILSAFE_RESULTS_KEY,
+    FAILSAFE_METADATA_KEY,
 )
 
 from langgraph.graph import START, END
@@ -42,9 +42,9 @@ class TestState(TypedDict):
     amount: float
     note: str
     action: str
-    _agentpact_metadata: dict
-    _agentpact_last_node: str
-    _agentpact_results: Annotated[list, operator.add]
+    _failsafe_metadata: dict
+    _failsafe_last_node: str
+    _failsafe_results: Annotated[list, operator.add]
 
 
 
@@ -99,9 +99,9 @@ def make_initial_state(**overrides):
         "amount": 0.0,
         "note": "",
         "action": "",
-        AGENTPACT_METADATA_KEY: {},
-        AGENTPACT_STATE_KEY: "",
-        AGENTPACT_RESULTS_KEY: [],
+        FAILSAFE_METADATA_KEY: {},
+        FAILSAFE_STATE_KEY: "",
+        FAILSAFE_RESULTS_KEY: [],
     }
     state.update(overrides)
     return state
@@ -132,7 +132,7 @@ def test_valid_handoff_passes_through_graph():
     def research(state):
         return {
             "symbol": "AAPL", "amount": 5000.0,
-            AGENTPACT_METADATA_KEY: {
+            FAILSAFE_METADATA_KEY: {
                 "action": "recommend",
                 "request_id": "R1",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -146,7 +146,7 @@ def test_valid_handoff_passes_through_graph():
     app = build_two_node_graph(registry, audit, research, trading)
     result = app.invoke(make_initial_state())
 
-    validations = result[AGENTPACT_RESULTS_KEY]
+    validations = result[FAILSAFE_RESULTS_KEY]
     assert len(validations) == 1, f"Expected 1 validation, got {len(validations)}"
     assert validations[0]["result"] == "pass"
     assert validations[0]["consumer"] == "research"
@@ -162,7 +162,7 @@ def test_entry_node_skips_validation():
 
     def research(state):
         return {"symbol": "MSFT", "amount": 1000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -172,8 +172,8 @@ def test_entry_node_skips_validation():
     result = app.invoke(make_initial_state())
 
     # Only research → trading; START → research skipped
-    assert len(result[AGENTPACT_RESULTS_KEY]) == 1
-    assert result[AGENTPACT_RESULTS_KEY][0]["consumer"] == "research"
+    assert len(result[FAILSAFE_RESULTS_KEY]) == 1
+    assert result[FAILSAFE_RESULTS_KEY][0]["consumer"] == "research"
     print("PASS test_entry_node_skips_validation")
 
 
@@ -184,7 +184,7 @@ def test_bad_pattern_blocks_in_graph():
 
     def research(state):
         return {"symbol": "bad_symbol", "amount": 5000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -206,7 +206,7 @@ def test_missing_required_field_blocks():
 
     def research(state):
         return {"amount": 5000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -228,7 +228,7 @@ def test_amount_over_max_blocks():
 
     def research(state):
         return {"symbol": "TSLA", "amount": 999999.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -252,7 +252,7 @@ def test_ssn_detected_and_blocked():
     def research(state):
         return {"symbol": "AAPL", "amount": 5000.0,
                 "note": "Client SSN 123-45-6789",
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -278,7 +278,7 @@ def test_large_transaction_without_approval_blocks():
 
     def research(state):
         return {"symbol": "GOOGL", "amount": 50000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -304,7 +304,7 @@ def test_large_transaction_with_approval_passes():
 
     def research(state):
         return {"symbol": "GOOGL", "amount": 50000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r", "human_approved": True}}
 
     def trading(state):
@@ -314,7 +314,7 @@ def test_large_transaction_with_approval_passes():
                                block=True, policy_pack=FinancePolicyPack())
 
     result = app.invoke(make_initial_state())
-    validations = result[AGENTPACT_RESULTS_KEY]
+    validations = result[FAILSAFE_RESULTS_KEY]
     assert len(validations) == 1
     policy_violations = validations[0]["violations"]["policy"]
     assert not any(v["rule_id"] == "FIN-AUTH-003" for v in policy_violations)
@@ -331,7 +331,7 @@ def test_mnpi_detection_in_graph():
     def research(state):
         return {"symbol": "NVDA", "amount": 5000.0,
                 "note": "Pre-release earnings data suggests strong Q4",
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -358,7 +358,7 @@ def test_monitor_mode_logs_but_does_not_block():
 
     def research(state):
         return {"symbol": "bad", "amount": 5000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -369,7 +369,7 @@ def test_monitor_mode_logs_but_does_not_block():
 
     assert result["note"] == "still executed"
 
-    validations = result[AGENTPACT_RESULTS_KEY]
+    validations = result[FAILSAFE_RESULTS_KEY]
     assert len(validations) == 1
     assert validations[0]["result"] == "fail"
     assert validations[0]["total_violations"] > 0
@@ -386,7 +386,7 @@ def test_audit_logger_records_all_validations():
 
     def research(state):
         return {"symbol": "AAPL", "amount": 5000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -415,7 +415,7 @@ def test_violation_callback_fires_in_graph():
 
     def research(state):
         return {"symbol": "bad", "amount": 5000.0,
-                AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
+                FAILSAFE_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
     def trading(state):
@@ -453,7 +453,7 @@ def test_no_contract_blocks_handoff():
 
     def rogue(state):
         return {"symbol": "HACK", "amount": 1.0,
-                AGENTPACT_METADATA_KEY: {"action": "query"}}
+                FAILSAFE_METADATA_KEY: {"action": "query"}}
 
     def trading(state):
         return {}
@@ -487,7 +487,7 @@ def test_metadata_separated_from_data():
     def research(state):
         return {
             "symbol": "AAPL", "amount": 5000.0, "action": "buy",
-            AGENTPACT_METADATA_KEY: {
+            FAILSAFE_METADATA_KEY: {
                 "action": "recommend",
                 "request_id": "R1",
                 "timestamp": "t",
@@ -501,7 +501,7 @@ def test_metadata_separated_from_data():
     app = build_two_node_graph(registry, audit, research, trading)
     result = app.invoke(make_initial_state())
 
-    validations = result[AGENTPACT_RESULTS_KEY]
+    validations = result[FAILSAFE_RESULTS_KEY]
     assert validations[0]["result"] == "pass"
     assert result["action"] == "buy"
     print("PASS test_metadata_separated_from_data")
@@ -537,7 +537,7 @@ if __name__ == "__main__":
     failed = 0
 
     print("\n" + "=" * 50)
-    print("  AgentPact LangGraph Integration Tests")
+    print("  Failsafe LangGraph Integration Tests")
     print("=" * 50 + "\n")
 
     for test in tests:

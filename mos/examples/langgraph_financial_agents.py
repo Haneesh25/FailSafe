@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-AgentPact + LangGraph: Financial Multi-Agent System
+Failsafe + LangGraph: Financial Multi-Agent System
 
 A complete working example of 4 AI agents collaborating on portfolio
-rebalancing, with AgentPact validating every handoff at the LangGraph
+rebalancing, with Failsafe validating every handoff at the LangGraph
 graph edges.
 
 Agents:
@@ -13,7 +13,7 @@ Agents:
   4. Compliance — reviews transactions (ADMIN)
 
 Key concept:
-  Each agent sets `_agentpact_metadata` in its output to declare the
+  Each agent sets `_failsafe_metadata` in its output to declare the
   handoff action and audit fields. This keeps handoff metadata separate
   from domain data (e.g. trade action "buy" vs handoff action "recommend").
 
@@ -45,9 +45,9 @@ from agentpact.interceptor.middleware import HandoffBlockedError
 from agentpact.audit.logger import AuditLogger
 from agentpact.integrations.langgraph import (
     ValidatedGraph,
-    AGENTPACT_STATE_KEY,
-    AGENTPACT_RESULTS_KEY,
-    AGENTPACT_METADATA_KEY,
+    FAILSAFE_STATE_KEY,
+    FAILSAFE_RESULTS_KEY,
+    FAILSAFE_METADATA_KEY,
 )
 
 try:
@@ -78,10 +78,10 @@ class FinancialState(TypedDict):
     compliance_status: str
     review_notes: str
 
-    # AgentPact handoff metadata (action here = handoff action: query/recommend/etc)
-    _agentpact_metadata: dict
-    _agentpact_last_node: str
-    _agentpact_results: Annotated[list, operator.add]
+    # Failsafe handoff metadata (action here = handoff action: query/recommend/etc)
+    _failsafe_metadata: dict
+    _failsafe_last_node: str
+    _failsafe_results: Annotated[list, operator.add]
 
 
 def customer_service(state: FinancialState) -> dict:
@@ -94,7 +94,7 @@ def customer_service(state: FinancialState) -> dict:
         "request_type": state.get("request_type", "rebalance_request"),
         "account_id": state.get("account_id", "ACCT-00112233"),
         "risk_tolerance": state.get("risk_tolerance", "moderate"),
-        AGENTPACT_METADATA_KEY: {
+        FAILSAFE_METADATA_KEY: {
             "action": "query",
             "request_id": "REQ-2025-001",
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -115,7 +115,7 @@ def research_agent(state: FinancialState) -> dict:
         "action": "buy",
         "amount": amount_map.get(risk, 5000.0),
         "rationale": "Portfolio underweight in tech. AAPL fundamentals strong.",
-        AGENTPACT_METADATA_KEY: {
+        FAILSAFE_METADATA_KEY: {
             "action": "recommend",
             "request_id": "REQ-2025-001",
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -133,7 +133,7 @@ def trading_agent(state: FinancialState) -> dict:
         "trade_id": "TRD-2025-00001",
         "execution_price": 182.50,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        AGENTPACT_METADATA_KEY: {
+        FAILSAFE_METADATA_KEY: {
             "action": "compliance_review",
             "request_id": "REQ-2025-001",
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -147,7 +147,7 @@ def compliance_agent(state: FinancialState) -> dict:
     return {
         "compliance_status": "approved",
         "review_notes": f"Trade {state.get('trade_id', 'N/A')} reviewed. No issues found.",
-        AGENTPACT_METADATA_KEY: {
+        FAILSAFE_METADATA_KEY: {
             "action": "audit",
             "request_id": "REQ-2025-001",
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -323,9 +323,9 @@ def make_initial_state(**overrides) -> dict:
         "timestamp": "",
         "compliance_status": "",
         "review_notes": "",
-        AGENTPACT_METADATA_KEY: {},
-        AGENTPACT_STATE_KEY: "",
-        AGENTPACT_RESULTS_KEY: [],
+        FAILSAFE_METADATA_KEY: {},
+        FAILSAFE_STATE_KEY: "",
+        FAILSAFE_RESULTS_KEY: [],
     }
     state.update(overrides)
     return state
@@ -333,7 +333,7 @@ def make_initial_state(**overrides) -> dict:
 
 def run_demo():
     print("\n" + "=" * 70)
-    print("  AgentPact + LangGraph: Financial Multi-Agent System")
+    print("  Failsafe + LangGraph: Financial Multi-Agent System")
     print("=" * 70)
 
     print("\n" + "-" * 70)
@@ -346,7 +346,7 @@ def run_demo():
 
     result = app.invoke(make_initial_state())
 
-    validations = result[AGENTPACT_RESULTS_KEY]
+    validations = result[FAILSAFE_RESULTS_KEY]
     print(f"  Pipeline completed. {len(validations)} handoffs validated.\n")
     for v in validations:
         icon = "PASS" if v["result"] == "pass" else "FAIL"
@@ -373,7 +373,7 @@ def run_demo():
             "action": "buy",
             "amount": 3000.0,
             "rationale": "Client John Doe (SSN: 123-45-6789) wants tech exposure",
-            AGENTPACT_METADATA_KEY: {
+            FAILSAFE_METADATA_KEY: {
                 "action": "recommend",
                 "request_id": "REQ-2025-002",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -421,7 +421,7 @@ def run_demo():
             "action": "buy",
             "amount": 75000.0,
             "rationale": "Major rebalancing towards large-cap tech",
-            AGENTPACT_METADATA_KEY: {
+            FAILSAFE_METADATA_KEY: {
                 "action": "recommend",
                 "request_id": "REQ-2025-003",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -460,7 +460,7 @@ def run_demo():
         request_type="rebalance_request",
     ))
 
-    validations4 = result4[AGENTPACT_RESULTS_KEY]
+    validations4 = result4[FAILSAFE_RESULTS_KEY]
     print(f"  Pipeline completed (monitor mode). {len(validations4)} handoffs validated.\n")
     for v in validations4:
         icon = "PASS" if v["result"] == "pass" else "FAIL"

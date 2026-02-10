@@ -170,7 +170,7 @@ class AuditLogger:
         
         lines = []
         lines.append("=" * 60)
-        lines.append("  AgentPact Compliance Report")
+        lines.append("  Failsafe Compliance Report")
         lines.append("=" * 60)
         lines.append(f"  Generated: {report['report_generated']}")
         lines.append(f"  Period: {report['period']['start'][:19]} → {report['period']['end'][:19]}")

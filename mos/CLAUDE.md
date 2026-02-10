@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**AgentPact** — contract testing and compliance validation for multi-agent AI systems. Validates handoffs between agents for schema violations, authority escalation, PII leaks, and regulatory non-compliance.
+**Failsafe** — contract testing and compliance validation for multi-agent AI systems. Validates handoffs between agents for schema violations, authority escalation, PII leaks, and regulatory non-compliance.
 
 ## Build & Test
 
@@ -28,12 +28,12 @@ agentpact/
   core/models.py       — AgentIdentity, FieldContract, HandoffContract, ContractRegistry
   core/engine.py       — ValidationEngine (schema → authority → policy)
   policies/finance.py  — FinancePolicyPack (10 rules: PII, SOX, SEC, FINRA)
-  interceptor/middleware.py — HandoffInterceptor, AgentPactGuard, HandoffBlockedError
+  interceptor/middleware.py — HandoffInterceptor, FailsafeGuard, HandoffBlockedError
   audit/logger.py      — AuditLogger (in-memory + SQLite)
   integrations/langgraph.py — ValidatedGraph (wraps LangGraph StateGraph)
 dashboard/
   app.py               — FastAPI server with seeded demo scenarios
-  index.html           — Single-page monitoring dashboard
+  index.html           — Single-page dashboard (terminal log, contract viewer, payload inspector)
 ```
 
 Root-level `models.py`, `engine.py`, etc. are the original flat copies (pre-package).
@@ -43,5 +43,6 @@ Root-level `models.py`, `engine.py`, etc. are the original flat copies (pre-pack
 - **Fail closed** — CRITICAL/HIGH violations block handoffs
 - **Three-layer validation** — schema, authority, policy (pluggable packs)
 - **Zero core dependencies** — stdlib only (dataclasses, sqlite3, re, json)
-- **LangGraph integration** — `_agentpact_metadata` state key separates handoff metadata from domain data; contract-scoped field filtering avoids false positives from LangGraph's cumulative state
+- **LangGraph integration** — `_failsafe_metadata` state key separates handoff metadata from domain data; contract-scoped field filtering avoids false positives from LangGraph's cumulative state
+- **Dashboard** — real-time API (summary, handoffs, agents, contracts, simulate), terminal validation log, clickable handoff rows with payload/violation inspection, contract schema viewer with field constraints
 - **Python 3.10+**

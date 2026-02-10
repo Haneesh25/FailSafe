@@ -50,7 +50,7 @@ class AgentIdentity:
             "version": self.version,
             "url": self.url,
             "skills": self.skills,
-            "agentpact": {
+            "failsafe": {
                 "authority_level": self.authority_level.value,
                 "allowed_data_domains": self.allowed_data_domains,
                 "compliance_scopes": self.compliance_scopes,

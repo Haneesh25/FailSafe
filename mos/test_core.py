@@ -1,5 +1,5 @@
 """
-AgentPact Test Suite
+Failsafe Test Suite
 
 Tests for the core validation engine, policy packs, and interceptor.
 Run with: python -m pytest tests/ -v
@@ -277,12 +277,12 @@ def test_interceptor_logs_to_audit():
     print("✅ test_interceptor_logs_to_audit")
 
 def test_guard_raises_on_block():
-    from agentpact.interceptor.middleware import AgentPactGuard
+    from agentpact.interceptor.middleware import FailsafeGuard
     
     registry = make_registry()
     interceptor = HandoffInterceptor(registry)
     
-    guard = AgentPactGuard(interceptor, "agent_a", "unknown_agent")
+    guard = FailsafeGuard(interceptor, "agent_a", "unknown_agent")
     
     try:
         guard.send({"data": "value"})
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     failed = 0
     
     print("\n" + "=" * 50)
-    print("  AgentPact Test Suite")
+    print("  Failsafe Test Suite")
     print("=" * 50 + "\n")
     
     for test in tests:

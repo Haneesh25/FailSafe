@@ -50,7 +50,7 @@ class AgentIdentity:
             "version": self.version,
             "url": self.url,
             "skills": self.skills,
-            "agentpact": {
+            "failsafe": {
                 "authority_level": self.authority_level.value,
                 "allowed_data_domains": self.allowed_data_domains,
                 "compliance_scopes": self.compliance_scopes,
@@ -159,7 +159,7 @@ class PolicyViolation:
     policy_pack: str = ""
     
     def to_dict(self) -> dict:
-        return {
+        d = {
             "rule_id": self.rule_id,
             "rule_name": self.rule_name,
             "severity": self.severity.value,
@@ -167,6 +167,11 @@ class PolicyViolation:
             "field_path": self.field_path,
             "policy_pack": self.policy_pack,
         }
+        if self.expected is not None:
+            d["expected"] = str(self.expected)
+        if self.actual is not None:
+            d["actual"] = str(self.actual)
+        return d
 
 
 @dataclass
@@ -214,6 +219,7 @@ class HandoffValidationResult:
             },
             "total_violations": self.total_violations,
             "validation_duration_ms": self.validation_duration_ms,
+            "payload": self.payload_snapshot,
         }
     
     def summary(self) -> str:

@@ -188,7 +188,7 @@ seed_data()
 
 
 
-app = FastAPI(title="AgentPact Dashboard")
+app = FastAPI(title="Failsafe Dashboard")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -221,6 +221,19 @@ async def api_contracts():
     return JSONResponse({
         cid: c.to_dict() for cid, c in registry.contracts.items()
     })
+
+
+@app.post("/api/validate")
+async def api_validate(request: dict):
+    try:
+        from_agent = request.get("from_agent", "")
+        to_agent = request.get("to_agent", "")
+        data = request.get("data", {})
+        metadata = request.get("metadata", {})
+        r = interceptor.validate_outgoing(from_agent, to_agent, data, metadata)
+        return JSONResponse(r.to_dict())
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 @app.post("/api/simulate/{scenario}")
@@ -261,6 +274,6 @@ async def api_simulate(scenario: str):
 
 
 if __name__ == "__main__":
-    print("\n  AgentPact Dashboard")
+    print("\n  Failsafe Dashboard")
     print("  http://localhost:8420\n")
     uvicorn.run(app, host="0.0.0.0", port=8420, log_level="warning")

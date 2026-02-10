@@ -116,7 +116,7 @@ class HandoffInterceptor:
         if "metadata" not in annotated["message"]:
             annotated["message"]["metadata"] = {}
         
-        annotated["message"]["metadata"]["agentpact"] = {
+        annotated["message"]["metadata"]["failsafe"] = {
             "validated": True,
             "result": result.overall_result.value,
             "handoff_id": result.handoff_id,
@@ -128,7 +128,7 @@ class HandoffInterceptor:
         return result, annotated
 
 
-class AgentPactGuard:
+class FailsafeGuard:
     """Context manager / decorator for protecting handoffs."""
 
     def __init__(

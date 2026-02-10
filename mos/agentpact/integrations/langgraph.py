@@ -18,9 +18,9 @@ from ..audit.logger import AuditLogger
 from ..interceptor.middleware import HandoffBlockedError
 
 
-AGENTPACT_STATE_KEY = "_agentpact_last_node"
-AGENTPACT_RESULTS_KEY = "_agentpact_results"
-AGENTPACT_METADATA_KEY = "_agentpact_metadata"
+FAILSAFE_STATE_KEY = "_failsafe_last_node"
+FAILSAFE_RESULTS_KEY = "_failsafe_results"
+FAILSAFE_METADATA_KEY = "_failsafe_metadata"
 
 
 class ValidatedGraph:
@@ -56,13 +56,13 @@ class ValidatedGraph:
         # Skip internal keys and empty defaults that LangGraph initializes
         return {
             k: v for k, v in state.items()
-            if not k.startswith("_agentpact_")
+            if not k.startswith("_failsafe_")
             and v not in ("", 0, 0.0, None, [], {}, False)
         }
 
     @staticmethod
     def _default_metadata_extractor(state: dict) -> dict:
-        return dict(state.get(AGENTPACT_METADATA_KEY) or {})
+        return dict(state.get(FAILSAFE_METADATA_KEY) or {})
 
     def _validate_transition(
         self, from_node: str, to_node: str, state: dict
@@ -135,7 +135,7 @@ class _PatchedStateGraph:
         vg = self._vg
 
         def wrapper(state: dict) -> dict:
-            last_node = state.get(AGENTPACT_STATE_KEY, "")
+            last_node = state.get(FAILSAFE_STATE_KEY, "")
             new_results: list[dict] = []
 
             if last_node:  # skip entry point
@@ -149,8 +149,8 @@ class _PatchedStateGraph:
 
             # Only emit new results; the reducer handles accumulation
             if isinstance(output, dict):
-                output[AGENTPACT_STATE_KEY] = node_name
-                output[AGENTPACT_RESULTS_KEY] = new_results
+                output[FAILSAFE_STATE_KEY] = node_name
+                output[FAILSAFE_RESULTS_KEY] = new_results
             return output
 
         wrapper.__name__ = fn.__name__

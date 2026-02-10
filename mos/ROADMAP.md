@@ -1,8 +1,8 @@
-# AgentPact — Technical Roadmap
+# Failsafe — Technical Roadmap
 
 ## What This Is
 
-**AgentPact** is contract testing and compliance validation for multi-agent AI systems. It validates every handoff between agents — catching schema violations, authority escalation, PII leaks, and regulatory non-compliance before they reach production.
+**Failsafe** is contract testing and compliance validation for multi-agent AI systems. It validates every handoff between agents — catching schema violations, authority escalation, PII leaks, and regulatory non-compliance before they reach production.
 
 Think: **Pact** (contract testing) meets **OPA** (policy engine) for agent teams.
 
@@ -14,7 +14,7 @@ Think: **Pact** (contract testing) meets **OPA** (policy engine) for agent teams
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AgentPact System                          │
+│                    Failsafe System                          │
 │                                                             │
 │  ┌──────────────┐    ┌───────────────┐    ┌──────────────┐ │
 │  │   Contract    │    │  Validation   │    │    Policy     │ │
@@ -130,8 +130,8 @@ registry = ContractRegistry.from_a2a_agent_cards([
 ```
 
 **Tasks:**
-- [ ] Parse A2A Agent Cards into AgentPact contracts
-- [ ] Extend Agent Cards with AgentPact metadata (custom extensions)
+- [ ] Parse A2A Agent Cards into Failsafe contracts
+- [ ] Extend Agent Cards with Failsafe metadata (custom extensions)
 - [ ] Intercept A2A JSON-RPC messages for validation
 - [ ] Support A2A streaming (SSE) validation
 - [ ] A2A Agent Card validator (does the card match the agent's actual behavior?)
@@ -140,15 +140,15 @@ registry = ContractRegistry.from_a2a_agent_cards([
 ```python
 # LangGraph middleware
 from langgraph.graph import StateGraph
-from agentpact.integrations.langgraph import AgentPactCheckpoint
+from agentpact.integrations.langgraph import FailsafeCheckpoint
 
 graph = StateGraph(State)
 graph.add_node("research", research_agent)
 graph.add_node("trading", trading_agent)
 
-# AgentPact validates at every edge
+# Failsafe validates at every edge
 graph.add_edge("research", "trading", 
-    checkpointer=AgentPactCheckpoint(registry, audit))
+    checkpointer=FailsafeCheckpoint(registry, audit))
 ```
 
 **Tasks:**
@@ -260,10 +260,10 @@ results = validator.run(
 #### 3.2 CI/CD Integration
 ```yaml
 # GitHub Actions
-- name: AgentPact Contract Tests
+- name: Failsafe Contract Tests
   run: agentpact test --contracts ./contracts/ --report junit
   
-- name: AgentPact Chaos Tests
+- name: Failsafe Chaos Tests
   run: agentpact chaos --experiments ./chaos/ --report junit
 ```
 

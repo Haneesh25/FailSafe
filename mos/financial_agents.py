@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-AgentPact Example: Financial Multi-Agent System
+Failsafe Example: Financial Multi-Agent System
 
 Demonstrates a realistic scenario where multiple AI agents collaborate
-on financial tasks. AgentPact validates every handoff between them.
+on financial tasks. Failsafe validates every handoff between them.
 
 Scenario:
   A financial services firm has 4 agents:
@@ -13,7 +13,7 @@ Scenario:
   4. Compliance Agent - reviews transactions
 
   The system processes a customer request to rebalance their portfolio.
-  AgentPact validates every agent-to-agent handoff.
+  Failsafe validates every agent-to-agent handoff.
 """
 
 import json
@@ -213,7 +213,7 @@ def run_scenario():
     """Run the full multi-agent financial scenario."""
     
     print("\n" + "=" * 70)
-    print("  AgentPact Demo: Financial Multi-Agent System")
+    print("  Failsafe Demo: Financial Multi-Agent System")
     print("=" * 70)
     print()
 
