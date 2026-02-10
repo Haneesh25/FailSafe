@@ -42,6 +42,7 @@ from ..interceptor.middleware import HandoffBlockedError
 
 AGENTPACT_STATE_KEY = "_agentpact_last_node"
 AGENTPACT_RESULTS_KEY = "_agentpact_results"
+AGENTPACT_METADATA_KEY = "_agentpact_metadata"
 
 
 class ValidatedGraph:
@@ -56,8 +57,12 @@ class ValidatedGraph:
     The graph state must include:
         _agentpact_last_node: str   — tracks the source node
         _agentpact_results: list    — accumulates validation results (dicts)
+        _agentpact_metadata: dict   — handoff metadata (action, request_id, etc.)
 
-    These are injected automatically by build().
+    Agent node functions should set _agentpact_metadata in their output
+    to specify the handoff action and audit fields (request_id, timestamp,
+    initiator, human_approved). This keeps handoff metadata separate from
+    domain data fields (e.g. trade "action" vs handoff "action").
     """
 
     def __init__(
@@ -93,27 +98,30 @@ class ValidatedGraph:
 
     @staticmethod
     def _default_field_extractor(state: dict) -> dict:
-        """Extract handoff data fields from state, excluding internal keys."""
+        """
+        Extract handoff data fields from state, excluding internal keys
+        and empty/default values.
+
+        LangGraph state always contains every declared field. Fields with
+        empty-string, zero, None, or empty-list values are excluded so
+        that AgentPact doesn't flag unrelated fields as "unexpected".
+        """
         return {
             k: v for k, v in state.items()
             if not k.startswith("_agentpact_")
+            and v not in ("", 0, 0.0, None, [], {}, False)
         }
 
     @staticmethod
     def _default_metadata_extractor(state: dict) -> dict:
-        """Extract metadata from state if present."""
-        meta = {}
-        if "action" in state:
-            meta["action"] = state["action"]
-        if "request_id" in state:
-            meta["request_id"] = state["request_id"]
-        if "timestamp" in state:
-            meta["timestamp"] = state["timestamp"]
-        if "initiator" in state:
-            meta["initiator"] = state["initiator"]
-        if "human_approved" in state:
-            meta["human_approved"] = state["human_approved"]
-        return meta
+        """
+        Extract handoff metadata from the _agentpact_metadata state key.
+
+        Agent nodes set _agentpact_metadata to specify the handoff action
+        and audit trail fields. This avoids collisions between domain data
+        (e.g. trade action "buy") and handoff metadata (e.g. action "recommend").
+        """
+        return dict(state.get(AGENTPACT_METADATA_KEY) or {})
 
     def _validate_transition(
         self, from_node: str, to_node: str, state: dict
@@ -121,6 +129,14 @@ class ValidatedGraph:
         """Run AgentPact validation for a state transition."""
         data = self._field_extractor(state)
         metadata = self._metadata_extractor(state)
+
+        # In LangGraph, state accumulates fields from all nodes. To avoid
+        # false "unexpected field" warnings, narrow the data to only fields
+        # defined in the contract schema for this specific edge.
+        contract = self.registry.get_contract_for_handoff(from_node, to_node)
+        if contract and contract.request_schema:
+            contract_fields = {f.name for f in contract.request_schema}
+            data = {k: v for k, v in data.items() if k in contract_fields}
 
         payload = HandoffPayload(data=data, metadata=metadata)
 
@@ -186,12 +202,12 @@ class _PatchedStateGraph:
 
         def wrapper(state: dict) -> dict:
             last_node = state.get(AGENTPACT_STATE_KEY, "")
-            results_so_far = list(state.get(AGENTPACT_RESULTS_KEY) or [])
+            new_results: list[dict] = []
 
             # Validate if there is a source node (skip for entry point)
             if last_node:
                 result = vg._validate_transition(last_node, node_name, state)
-                results_so_far.append(result.to_dict())
+                new_results.append(result.to_dict())
 
                 if result.is_blocked and vg.block_on_violation:
                     raise HandoffBlockedError(result)
@@ -199,10 +215,11 @@ class _PatchedStateGraph:
             # Call the real node function
             output = fn(state)
 
-            # Track provenance
+            # Track provenance. Only emit NEW results — the Annotated[list,
+            # operator.add] reducer on _agentpact_results handles accumulation.
             if isinstance(output, dict):
                 output[AGENTPACT_STATE_KEY] = node_name
-                output[AGENTPACT_RESULTS_KEY] = results_so_far
+                output[AGENTPACT_RESULTS_KEY] = new_results
             return output
 
         wrapper.__name__ = fn.__name__
