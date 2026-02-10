@@ -56,10 +56,6 @@ except ImportError:
     from typing_extensions import TypedDict
 
 
-# ──────────────────────────────────────────────────────────
-# State Schema
-# ──────────────────────────────────────────────────────────
-
 class FinancialState(TypedDict):
     # Customer request fields
     customer_id: str
@@ -87,10 +83,6 @@ class FinancialState(TypedDict):
     _agentpact_last_node: str
     _agentpact_results: Annotated[list, operator.add]
 
-
-# ──────────────────────────────────────────────────────────
-# Agent Functions (simulated — no LLM calls)
-# ──────────────────────────────────────────────────────────
 
 def customer_service(state: FinancialState) -> dict:
     """
@@ -163,10 +155,6 @@ def compliance_agent(state: FinancialState) -> dict:
         },
     }
 
-
-# ──────────────────────────────────────────────────────────
-# Registry Setup
-# ──────────────────────────────────────────────────────────
 
 def build_registry() -> ContractRegistry:
     """
@@ -295,10 +283,6 @@ def build_registry() -> ContractRegistry:
     return registry
 
 
-# ──────────────────────────────────────────────────────────
-# Graph Builder
-# ──────────────────────────────────────────────────────────
-
 def build_graph(
     registry: ContractRegistry,
     audit: AuditLogger,
@@ -347,16 +331,11 @@ def make_initial_state(**overrides) -> dict:
     return state
 
 
-# ──────────────────────────────────────────────────────────
-# Demo Runner
-# ──────────────────────────────────────────────────────────
-
 def run_demo():
     print("\n" + "=" * 70)
     print("  AgentPact + LangGraph: Financial Multi-Agent System")
     print("=" * 70)
 
-    # ── Scenario 1: Happy path ──────────────────────────────
     print("\n" + "-" * 70)
     print("  SCENARIO 1: Valid Portfolio Rebalance (Happy Path)")
     print("-" * 70 + "\n")
@@ -377,7 +356,6 @@ def run_demo():
     print(f"  Trade: {result['symbol']} {result['action']} "
           f"${result['amount']:.2f} @ ${result['execution_price']:.2f}")
 
-    # ── Scenario 2: PII leak blocked ───────────────────────
     print("\n" + "-" * 70)
     print("  SCENARIO 2: PII Leak Detection (SSN in rationale)")
     print("-" * 70 + "\n")
@@ -426,7 +404,6 @@ def run_demo():
             for v in all_v:
                 print(f"    [{v.severity.value.upper()}] {v.rule_id}: {v.message}")
 
-    # ── Scenario 3: Large transaction without approval ─────
     print("\n" + "-" * 70)
     print("  SCENARIO 3: Large Transaction Without Human Approval")
     print("-" * 70 + "\n")
@@ -470,7 +447,6 @@ def run_demo():
     except HandoffBlockedError as e:
         print(f"  BLOCKED: {e}")
 
-    # ── Scenario 4: Non-blocking mode (monitor only) ───────
     print("\n" + "-" * 70)
     print("  SCENARIO 4: Monitor Mode (violations logged but not blocked)")
     print("-" * 70 + "\n")
@@ -496,7 +472,6 @@ def run_demo():
         for viol in violations:
             print(f"         [{viol['severity'].upper()}] {viol['rule_id']}: {viol['message']}")
 
-    # ── Summary ────────────────────────────────────────────
     print("\n" + "-" * 70)
     print("  SUMMARY")
     print("-" * 70 + "\n")

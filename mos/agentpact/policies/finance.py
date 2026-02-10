@@ -1,13 +1,4 @@
-"""
-AgentPact Finance Policy Pack
-
-Domain-specific compliance rules for financial services.
-Covers SOX, SEC, and general financial data handling requirements.
-
-Each rule is a callable that evaluates a handoff and returns violations.
-Rules are designed to catch the most common compliance failures
-in multi-agent financial systems.
-"""
+"""Finance compliance rules for SOX, SEC, FINRA, and PCI-DSS."""
 
 from __future__ import annotations
 from typing import Optional
@@ -22,17 +13,6 @@ from ..core.models import (
 
 
 class FinancePolicyPack:
-    """
-    Finance compliance rules for multi-agent handoffs.
-    
-    Rule categories:
-    - FIN-PII: PII/financial data exposure rules
-    - FIN-AUTH: Financial authorization rules  
-    - FIN-AUDIT: Audit trail requirements (SOX)
-    - FIN-TRADE: Trading and transaction rules (SEC)
-    - FIN-DATA: Data handling rules
-    """
-    
     PACK_NAME = "finance_v1"
     
     def evaluate(
@@ -42,17 +22,14 @@ class FinancePolicyPack:
         consumer: Optional[AgentIdentity],
         provider: Optional[AgentIdentity],
     ) -> list[PolicyViolation]:
-        """Run all finance policy rules against a handoff."""
         violations = []
-        
-        # Only evaluate if finance compliance scopes are relevant
+
         finance_scopes = {"SOX", "SEC", "FINRA", "PCI-DSS"}
         contract_scopes = set(contract.required_compliance_scopes)
         
         if not contract_scopes.intersection(finance_scopes):
-            return violations  # Not a finance-regulated handoff
-        
-        # Run all rules
+            return violations
+
         rules = [
             self._check_pii_exposure,
             self._check_financial_amount_limits,
@@ -76,23 +53,18 @@ class FinancePolicyPack:
         
         return violations
     
-    # ──────────────────────────────────────────────────────
-    # PII / Sensitive Data Rules
-    # ──────────────────────────────────────────────────────
-    
+    # PII / sensitive data
+
     def _check_pii_exposure(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-PII-001: PII fields must not be passed to agents without PII clearance."""
         if not consumer:
             return None
-            
-        # Check if payload contains PII fields
+
         pii_fields = [f for f in contract.request_schema if f.pii]
         if not pii_fields:
             return None
-        
-        # Check if any PII field has actual data
+
         for field in pii_fields:
             if payload.data.get(field.name):
                 if "pii" not in consumer.allowed_data_domains:
@@ -112,7 +84,6 @@ class FinancePolicyPack:
     def _check_ssn_exposure(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-PII-002: SSN patterns must never appear in handoff data."""
         import re
         ssn_pattern = r'\b\d{3}-?\d{2}-?\d{4}\b'
         
@@ -144,13 +115,11 @@ class FinancePolicyPack:
     def _check_account_number_masking(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-PII-003: Account numbers must be masked (show only last 4 digits)."""
         import re
         
         for key, value in payload.data.items():
             if "account" in key.lower() and isinstance(value, str):
-                # Full account number pattern (8+ digits unmasked)
-                if re.match(r'^\d{8,}$', value):
+                if re.match(r'^\d{8,}$', value):  # unmasked
                     return PolicyViolation(
                         rule_id="FIN-PII-003",
                         rule_name="unmasked_account_number",
@@ -161,14 +130,11 @@ class FinancePolicyPack:
                     )
         return None
     
-    # ──────────────────────────────────────────────────────
-    # Financial Authorization Rules
-    # ──────────────────────────────────────────────────────
-    
+    # Authorization
+
     def _check_financial_amount_limits(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-AUTH-001: Financial amounts must not exceed agent's authorized limit."""
         amount = payload.data.get("amount") or payload.data.get("transaction_amount")
         if amount is None:
             return None
@@ -185,7 +151,6 @@ class FinancePolicyPack:
                 policy_pack=self.PACK_NAME,
             )
         
-        # Check agent-specific limits from metadata
         agent_limit = None
         if consumer:
             agent_limit = next(
@@ -210,7 +175,6 @@ class FinancePolicyPack:
     def _check_trade_authorization(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-AUTH-002: Trade actions require execute-level authority."""
         action = payload.metadata.get("action", "")
         trade_actions = {"buy", "sell", "trade", "execute_order", "place_order", "transfer"}
         
@@ -230,7 +194,6 @@ class FinancePolicyPack:
     def _check_transaction_approval_threshold(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-AUTH-003: Transactions above threshold require human approval flag."""
         amount = payload.data.get("amount") or payload.data.get("transaction_amount")
         if amount is None:
             return None
@@ -240,7 +203,7 @@ class FinancePolicyPack:
         except (TypeError, ValueError):
             return None
         
-        APPROVAL_THRESHOLD = 10000.0  # $10K default threshold
+        APPROVAL_THRESHOLD = 10000.0
         
         if amount > APPROVAL_THRESHOLD:
             has_approval = payload.metadata.get("human_approved", False)
@@ -255,14 +218,11 @@ class FinancePolicyPack:
                 )
         return None
     
-    # ──────────────────────────────────────────────────────
-    # SOX Audit Rules
-    # ──────────────────────────────────────────────────────
-    
+    # SOX audit
+
     def _check_audit_trail_metadata(
         self, contract, payload, consumer, provider
     ) -> list[PolicyViolation]:
-        """FIN-AUDIT-001: SOX requires complete audit trail metadata on financial handoffs."""
         violations = []
         
         if "SOX" not in contract.required_compliance_scopes:
@@ -286,7 +246,6 @@ class FinancePolicyPack:
     def _check_segregation_of_duties(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-AUDIT-002: SOX segregation of duties - same agent can't approve and execute."""
         if "SOX" not in contract.required_compliance_scopes:
             return None
         
@@ -303,18 +262,14 @@ class FinancePolicyPack:
             )
         return None
     
-    # ──────────────────────────────────────────────────────
-    # SEC / Data Rules
-    # ──────────────────────────────────────────────────────
-    
+    # SEC / data boundaries
+
     def _check_cross_boundary_data_leak(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-DATA-001: Financial data must not cross compliance boundary without authorization."""
         if not consumer or not provider:
             return None
-        
-        # Check if data domains are compatible
+
         financial_fields = [f for f in contract.request_schema if f.financial_data]
         if not financial_fields:
             return None
@@ -338,7 +293,6 @@ class FinancePolicyPack:
     def _check_material_nonpublic_info(
         self, contract, payload, consumer, provider
     ) -> Optional[PolicyViolation]:
-        """FIN-SEC-001: Material non-public information (MNPI) must be flagged."""
         if "SEC" not in contract.required_compliance_scopes:
             return None
         

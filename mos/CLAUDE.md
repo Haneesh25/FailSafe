@@ -4,67 +4,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**AgentPact** is a contract testing and compliance validation framework for multi-agent AI systems. It validates handoffs between agents, catching schema violations, authority escalation, PII leaks, and regulatory non-compliance. Think: Pact (contract testing) meets OPA (policy engine) for agent teams.
+**AgentPact** — contract testing and compliance validation for multi-agent AI systems. Validates handoffs between agents for schema violations, authority escalation, PII leaks, and regulatory non-compliance.
 
-Current status: v0.1 MVP prototype. Pure Python, zero runtime dependencies.
-
-## Build & Development
+## Build & Test
 
 ```bash
-pip install -e ".[dev]"        # Install with dev dependencies (pytest)
-pip install -e ".[all]"        # Install all optional deps (fastapi, langgraph, a2a-python)
+pip install -e ".[dev]"               # dev deps (pytest)
+pip install -e ".[all]"               # all optional deps (fastapi, langgraph)
+
+python3 test_core.py                  # 18 core tests
+python3 test_langgraph.py             # 14 LangGraph integration tests
+python3 financial_agents.py           # 4-agent demo
+python3 examples/langgraph_financial_agents.py  # LangGraph demo
+python3 dashboard/app.py              # Dashboard on http://localhost:8420
 ```
 
-## Testing
+Tests use `sys.path` insertion to resolve the `agentpact` package from the repo root.
 
-```bash
-python -m pytest test_core.py -v       # Run full test suite
-python -m pytest test_core.py -v -k "test_name"  # Run single test
-```
-
-The test suite (test_core.py) has 17 tests covering schema validation, authority validation, finance policy rules, interceptor middleware, and audit reporting.
-
-**Note:** Tests import from `agentpact.core.models`, `agentpact.policies.finance`, etc., but the package structure doesn't exist yet — all source files are flat in the repo root. Tests currently require a `sys.path` hack to work.
-
-## Running the Demo
-
-```bash
-python financial_agents.py     # 4-agent financial system with 6 validation scenarios
-```
-
-## Architecture
-
-All source files are currently flat in the repo root (future structure planned in ROADMAP.md).
-
-### Core Components
-
-- **models.py** — Data models using dataclasses: `AgentIdentity`, `FieldContract`, `HandoffContract`, `HandoffPayload`, `HandoffValidationResult`, `ContractRegistry`. Authority levels are hierarchical: READ_ONLY < READ_WRITE < EXECUTE < ADMIN.
-
-- **engine.py** — `ValidationEngine` with three-layer validation:
-  1. **Schema validation** — required fields, types, patterns (regex), enums, ranges, max length
-  2. **Authority validation** — agent authority level, data classification clearance, allowed/prohibited actions, compliance scope overlap
-  3. **Policy validation** — dispatches to registered policy packs
-
-- **finance.py** — `FinancePolicyPack` with 10 compliance rules (PII exposure, SSN detection, unmasked accounts, transaction limits, trade authority, SOX audit metadata, segregation of duties, data boundaries, MNPI detection). Rule IDs follow `FIN-{CATEGORY}-{NUM}` pattern. Severities: CRITICAL (blocks handoff) and HIGH (blocks handoff).
-
-- **middleware.py** — `HandoffInterceptor` wraps the validation engine for A2A JSON-RPC messages. `AgentPactGuard` provides a context manager/decorator API. Raises `HandoffBlockedError` when critical/high violations are found.
-
-- **logger.py** — `AuditLogger` with in-memory storage and optional SQLite persistence. Provides compliance reporting: pass/fail/warn rates, violation breakdowns, per-agent stats.
-
-### Data Flow
+## Package Structure
 
 ```
-Agent A → HandoffInterceptor.validate_outgoing() → ValidationEngine → PolicyPack(s)
-                                                         ↓
-                                                   AuditLogger
-                                                         ↓
-                                               HandoffValidationResult (PASS/FAIL/WARN)
+agentpact/
+  core/models.py       — AgentIdentity, FieldContract, HandoffContract, ContractRegistry
+  core/engine.py       — ValidationEngine (schema → authority → policy)
+  policies/finance.py  — FinancePolicyPack (10 rules: PII, SOX, SEC, FINRA)
+  interceptor/middleware.py — HandoffInterceptor, AgentPactGuard, HandoffBlockedError
+  audit/logger.py      — AuditLogger (in-memory + SQLite)
+  integrations/langgraph.py — ValidatedGraph (wraps LangGraph StateGraph)
+dashboard/
+  app.py               — FastAPI server with seeded demo scenarios
+  index.html           — Single-page monitoring dashboard
 ```
 
-### Key Design Decisions
+Root-level `models.py`, `engine.py`, etc. are the original flat copies (pre-package).
 
-- **Fail closed**: handoffs with CRITICAL or HIGH violations are blocked, not just logged
-- **Protocol-level**: targets A2A/MCP standards, framework integrations (LangGraph) are adapters
-- **Policies are pluggable**: policy packs register with the engine via `engine.register_policy_pack()`
-- **Zero dependencies**: core logic uses only Python stdlib (dataclasses, sqlite3, re, json)
-- **Python 3.10+** required
+## Key Design
+
+- **Fail closed** — CRITICAL/HIGH violations block handoffs
+- **Three-layer validation** — schema, authority, policy (pluggable packs)
+- **Zero core dependencies** — stdlib only (dataclasses, sqlite3, re, json)
+- **LangGraph integration** — `_agentpact_metadata` state key separates handoff metadata from domain data; contract-scoped field filtering avoids false positives from LangGraph's cumulative state
+- **Python 3.10+**

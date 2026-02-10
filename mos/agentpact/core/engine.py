@@ -1,10 +1,4 @@
-"""
-AgentPact Validation Engine
-
-Validates handoff payloads against declared contracts.
-Handles the core challenge of LLM non-determinism by using
-flexible matchers (regex, range, semantic) rather than exact matching.
-"""
+"""Three-layer validation engine: schema, authority, and policy."""
 
 from __future__ import annotations
 import re
@@ -26,7 +20,6 @@ from .models import (
 )
 
 
-# Authority level hierarchy for comparison
 AUTHORITY_HIERARCHY = {
     AuthorityLevel.READ_ONLY: 0,
     AuthorityLevel.READ_WRITE: 1,
@@ -43,23 +36,13 @@ DATA_CLASSIFICATION_HIERARCHY = {
 
 
 class ValidationEngine:
-    """
-    Core validation engine for agent-to-agent handoffs.
-    
-    Validates three layers:
-    1. Schema validation — Does the payload match the declared contract?
-    2. Authority validation — Is the agent authorized for this action?
-    3. Policy validation — Does the handoff comply with domain-specific rules?
-    """
-    
     def __init__(self, registry: ContractRegistry):
         self.registry = registry
-        self._policy_packs: list = []  # Registered policy packs
-    
+        self._policy_packs: list = []
+
     def register_policy_pack(self, policy_pack) -> None:
-        """Register a domain-specific policy pack (e.g., finance, healthcare)."""
         self._policy_packs.append(policy_pack)
-    
+
     def validate_handoff(
         self,
         consumer_name: str,
@@ -67,10 +50,6 @@ class ValidationEngine:
         payload: HandoffPayload,
         direction: HandoffDirection = HandoffDirection.REQUEST,
     ) -> HandoffValidationResult:
-        """
-        Validate a complete handoff between two agents.
-        This is the main entry point.
-        """
         start_time = time.time()
         
         result = HandoffValidationResult(
@@ -80,7 +59,6 @@ class ValidationEngine:
             payload_snapshot=payload.data.copy(),
         )
         
-        # 1. Find the governing contract
         contract = self.registry.get_contract_for_handoff(consumer_name, provider_name)
         if not contract:
             result.schema_violations.append(PolicyViolation(
@@ -94,24 +72,20 @@ class ValidationEngine:
             return result
         
         result.contract_id = contract.contract_id
-        
-        # 2. Schema validation
+
         schema = contract.request_schema if direction == HandoffDirection.REQUEST else contract.response_schema
         result.schema_violations = self._validate_schema(payload.data, schema)
-        
-        # 3. Authority validation
+
         consumer = self.registry.get_agent(consumer_name)
         provider = self.registry.get_agent(provider_name)
         result.authority_violations = self._validate_authority(
             consumer, provider, contract, payload
         )
-        
-        # 4. Policy validation (domain-specific rules)
+
         for policy_pack in self._policy_packs:
             violations = policy_pack.evaluate(contract, payload, consumer, provider)
             result.policy_violations.extend(violations)
-        
-        # 5. Determine overall result
+
         all_violations = (
             result.schema_violations + 
             result.policy_violations + 
@@ -128,20 +102,14 @@ class ValidationEngine:
         result.validation_duration_ms = (time.time() - start_time) * 1000
         return result
     
-    # ──────────────────────────────────────────────────────
-    # Schema Validation
-    # ──────────────────────────────────────────────────────
-    
     def _validate_schema(
         self, data: dict[str, Any], schema: list[FieldContract]
     ) -> list[PolicyViolation]:
-        """Validate payload data against the field contracts."""
         violations = []
         
         for field_contract in schema:
             value = data.get(field_contract.name)
             
-            # Required field check
             if field_contract.required and value is None:
                 violations.append(PolicyViolation(
                     rule_id="SCHEMA_001",
@@ -155,15 +123,13 @@ class ValidationEngine:
                 continue
             
             if value is None:
-                continue  # Optional field not present, skip
-            
-            # Type check
+                continue
+
             type_violation = self._check_type(field_contract, value)
             if type_violation:
                 violations.append(type_violation)
-                continue  # Don't run further checks on wrong type
-            
-            # Pattern check (regex)
+                continue
+
             if field_contract.pattern:
                 if not re.match(field_contract.pattern, str(value)):
                     violations.append(PolicyViolation(
@@ -176,7 +142,6 @@ class ValidationEngine:
                         actual=str(value),
                     ))
             
-            # Enum check
             if field_contract.enum_values and value not in field_contract.enum_values:
                 violations.append(PolicyViolation(
                     rule_id="SCHEMA_004",
@@ -188,7 +153,6 @@ class ValidationEngine:
                     actual=value,
                 ))
             
-            # Range checks
             if field_contract.min_value is not None and isinstance(value, (int, float)):
                 if value < field_contract.min_value:
                     violations.append(PolicyViolation(
@@ -213,7 +177,6 @@ class ValidationEngine:
                         actual=value,
                     ))
             
-            # Max length
             if field_contract.max_length is not None and isinstance(value, str):
                 if len(value) > field_contract.max_length:
                     violations.append(PolicyViolation(
@@ -224,7 +187,6 @@ class ValidationEngine:
                         field_path=field_contract.name,
                     ))
         
-        # Check for unexpected fields not in schema
         schema_field_names = {fc.name for fc in schema}
         for key in data.keys():
             if key not in schema_field_names:
@@ -239,7 +201,6 @@ class ValidationEngine:
         return violations
     
     def _check_type(self, field_contract: FieldContract, value: Any) -> Optional[PolicyViolation]:
-        """Check if a value matches the expected type."""
         type_map = {
             "string": str,
             "number": (int, float),
@@ -260,10 +221,6 @@ class ValidationEngine:
             )
         return None
     
-    # ──────────────────────────────────────────────────────
-    # Authority Validation
-    # ──────────────────────────────────────────────────────
-    
     def _validate_authority(
         self,
         consumer: Optional[AgentIdentity],
@@ -271,7 +228,6 @@ class ValidationEngine:
         contract: HandoffContract,
         payload: HandoffPayload,
     ) -> list[PolicyViolation]:
-        """Check that agents have proper authority for this handoff."""
         violations = []
         
         if not consumer or not provider:
@@ -283,7 +239,6 @@ class ValidationEngine:
             ))
             return violations
         
-        # Check consumer has required authority level
         consumer_level = AUTHORITY_HIERARCHY.get(consumer.authority_level, 0)
         required_level = AUTHORITY_HIERARCHY.get(contract.required_authority, 0)
         
@@ -300,7 +255,6 @@ class ValidationEngine:
                 actual=consumer.authority_level.value,
             ))
         
-        # Check data classification doesn't exceed agent's clearance
         contract_classification = DATA_CLASSIFICATION_HIERARCHY.get(contract.max_data_classification, 0)
         consumer_classification = DATA_CLASSIFICATION_HIERARCHY.get(consumer.max_data_classification, 0)
         
@@ -317,7 +271,6 @@ class ValidationEngine:
                 actual=contract.max_data_classification,
             ))
         
-        # Check for prohibited actions in payload metadata
         action = payload.metadata.get("action", "")
         if action and action in contract.prohibited_actions:
             violations.append(PolicyViolation(
@@ -339,7 +292,6 @@ class ValidationEngine:
                 actual=action,
             ))
         
-        # Check compliance scope overlap
         if contract.required_compliance_scopes:
             missing_scopes = set(contract.required_compliance_scopes) - set(consumer.compliance_scopes)
             if missing_scopes:

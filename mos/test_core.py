@@ -16,10 +16,6 @@ from agentpact.interceptor.middleware import HandoffInterceptor, HandoffBlockedE
 from agentpact.audit.logger import AuditLogger
 
 
-# ──────────────────────────────────────────────────────────
-# Fixtures
-# ──────────────────────────────────────────────────────────
-
 def make_registry():
     """Create a test registry with basic agents and contracts."""
     registry = ContractRegistry()
@@ -61,10 +57,6 @@ def make_registry():
     
     return registry
 
-
-# ──────────────────────────────────────────────────────────
-# Schema Validation Tests
-# ──────────────────────────────────────────────────────────
 
 def test_valid_handoff_passes():
     registry = make_registry()
@@ -142,10 +134,6 @@ def test_unexpected_field_warns():
     print("✅ test_unexpected_field_warns")
 
 
-# ──────────────────────────────────────────────────────────
-# Authority Validation Tests
-# ──────────────────────────────────────────────────────────
-
 def test_no_contract_blocks():
     registry = make_registry()
     engine = ValidationEngine(registry)
@@ -190,10 +178,6 @@ def test_unauthorized_action_blocks():
     assert any(v.rule_id == "AUTH_005" for v in result.authority_violations)
     print("✅ test_unauthorized_action_blocks")
 
-
-# ──────────────────────────────────────────────────────────
-# Finance Policy Tests
-# ──────────────────────────────────────────────────────────
 
 def test_ssn_detection():
     registry = make_registry()
@@ -282,10 +266,6 @@ def test_sox_audit_metadata_required():
     print("✅ test_sox_audit_metadata_required")
 
 
-# ──────────────────────────────────────────────────────────
-# Interceptor Tests
-# ──────────────────────────────────────────────────────────
-
 def test_interceptor_logs_to_audit():
     registry = make_registry()
     audit = AuditLogger()
@@ -326,10 +306,6 @@ def test_violation_callback_fires():
     print("✅ test_violation_callback_fires")
 
 
-# ──────────────────────────────────────────────────────────
-# Audit Report Tests
-# ──────────────────────────────────────────────────────────
-
 def test_audit_report_generation():
     registry = make_registry()
     audit = AuditLogger()
@@ -347,10 +323,6 @@ def test_audit_report_generation():
     assert report["summary"]["failed"] >= 1
     print("✅ test_audit_report_generation")
 
-
-# ──────────────────────────────────────────────────────────
-# Run All Tests
-# ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     tests = [

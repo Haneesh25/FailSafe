@@ -1,13 +1,4 @@
-"""
-AgentPact Dashboard Server
-
-Runs the financial agents demo and serves a real-time dashboard
-showing validation results, agent topology, and audit trail.
-
-Run:
-    python dashboard/app.py
-    Open http://localhost:8420
-"""
+"""Dashboard server — python dashboard/app.py → http://localhost:8420"""
 
 from __future__ import annotations
 
@@ -36,9 +27,6 @@ from agentpact.interceptor.middleware import HandoffInterceptor, HandoffBlockedE
 from agentpact.audit.logger import AuditLogger
 
 
-# ──────────────────────────────────────────────────────────
-# Setup: registry, audit, interceptor
-# ──────────────────────────────────────────────────────────
 
 registry = ContractRegistry()
 
@@ -132,14 +120,9 @@ interceptor = HandoffInterceptor(registry, audit)
 interceptor.register_policy_pack(FinancePolicyPack())
 
 
-# ──────────────────────────────────────────────────────────
-# Seed data: run demo scenarios
-# ──────────────────────────────────────────────────────────
 
 def seed_data():
-    """Run several scenarios to populate the audit log with realistic data."""
 
-    # Scenario 1: Happy path
     interceptor.validate_outgoing("customer_service", "research_agent", {
         "customer_id": "CUST-123456", "request_type": "rebalance_request",
         "account_id": "ACCT-00112233",
@@ -155,7 +138,6 @@ def seed_data():
         "amount": 5000.0, "execution_price": 182.50,
     }, {"action": "compliance_review", "request_id": "REQ-001", "timestamp": datetime.now(timezone.utc).isoformat(), "initiator": "trading_agent"})
 
-    # Scenario 2: Another happy path
     interceptor.validate_outgoing("customer_service", "research_agent", {
         "customer_id": "CUST-789012", "request_type": "risk_assessment",
         "account_id": "ACCT-44556677",
@@ -171,31 +153,31 @@ def seed_data():
         "amount": 8000.0, "execution_price": 412.30,
     }, {"action": "compliance_review", "request_id": "REQ-002", "timestamp": datetime.now(timezone.utc).isoformat(), "initiator": "trading_agent"})
 
-    # Scenario 3: SSN leak
+    # SSN leak
     interceptor.validate_outgoing("research_agent", "trading_agent", {
         "symbol": "TSLA", "action": "buy", "amount": 3000.0,
         "rationale": "Client (SSN: 456-78-9012) wants EV exposure",
     }, {"action": "recommend", "request_id": "REQ-003", "timestamp": datetime.now(timezone.utc).isoformat(), "initiator": "research_agent"})
 
-    # Scenario 4: Large tx no approval
+    # Large tx, no approval
     interceptor.validate_outgoing("research_agent", "trading_agent", {
         "symbol": "GOOGL", "action": "buy", "amount": 75000.0,
         "rationale": "Major rebalancing",
     }, {"action": "recommend", "request_id": "REQ-004", "timestamp": datetime.now(timezone.utc).isoformat(), "initiator": "research_agent"})
 
-    # Scenario 5: Schema violation
+    # Schema violation
     interceptor.validate_outgoing("customer_service", "research_agent", {
         "customer_id": "BAD-FORMAT", "request_type": "rebalance_request",
         "account_id": "ACCT-00112233",
     }, {"action": "query", "request_id": "REQ-005", "timestamp": datetime.now(timezone.utc).isoformat(), "initiator": "customer_portal"})
 
-    # Scenario 6: MNPI
+    # MNPI
     interceptor.validate_outgoing("research_agent", "trading_agent", {
         "symbol": "NVDA", "action": "buy", "amount": 8000.0,
         "rationale": "Pre-release earnings suggest strong Q4. Insider sources confirm.",
     }, {"action": "recommend", "request_id": "REQ-006", "timestamp": datetime.now(timezone.utc).isoformat(), "initiator": "research_agent"})
 
-    # Scenario 7: No contract (unauthorized route)
+    # No contract
     interceptor.validate_outgoing("customer_service", "trading_agent", {
         "symbol": "HACK", "action": "buy", "amount": 50000.0,
         "rationale": "Direct trade attempt",
@@ -205,9 +187,6 @@ def seed_data():
 seed_data()
 
 
-# ──────────────────────────────────────────────────────────
-# FastAPI App
-# ──────────────────────────────────────────────────────────
 
 app = FastAPI(title="AgentPact Dashboard")
 
@@ -246,7 +225,6 @@ async def api_contracts():
 
 @app.post("/api/simulate/{scenario}")
 async def api_simulate(scenario: str):
-    """Run a scenario and return the validation result."""
     try:
         if scenario == "happy":
             r = interceptor.validate_outgoing("customer_service", "research_agent", {

@@ -1,14 +1,4 @@
-"""
-AgentPact LangGraph Integration Tests
-
-Tests for ValidatedGraph — the LangGraph integration that validates
-handoffs at graph edges. Covers happy path, violation detection,
-blocking behavior, monitor mode, and audit logging.
-
-Run with:
-    python test_langgraph.py
-    python -m pytest test_langgraph.py -v
-"""
+"""LangGraph integration tests."""
 
 import sys
 import os
@@ -46,9 +36,6 @@ except ImportError:
     from typing_extensions import TypedDict
 
 
-# ──────────────────────────────────────────────────────────
-# Shared State Schema
-# ──────────────────────────────────────────────────────────
 
 class TestState(TypedDict):
     symbol: str
@@ -60,9 +47,6 @@ class TestState(TypedDict):
     _agentpact_results: Annotated[list, operator.add]
 
 
-# ──────────────────────────────────────────────────────────
-# Fixtures
-# ──────────────────────────────────────────────────────────
 
 def make_registry():
     """Two-agent registry with one contract for research → trading."""
@@ -140,12 +124,8 @@ def build_two_node_graph(registry, audit, research_fn, trading_fn,
     return graph.compile()
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: Happy Path
-# ──────────────────────────────────────────────────────────
 
 def test_valid_handoff_passes_through_graph():
-    """A clean handoff should pass validation and complete the pipeline."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -177,7 +157,6 @@ def test_valid_handoff_passes_through_graph():
 
 
 def test_entry_node_skips_validation():
-    """The first node (from START) should not be validated — there's no source agent."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -192,18 +171,14 @@ def test_entry_node_skips_validation():
     app = build_two_node_graph(registry, audit, research, trading)
     result = app.invoke(make_initial_state())
 
-    # Only 1 validation: research → trading. No validation for START → research.
+    # Only research → trading; START → research skipped
     assert len(result[AGENTPACT_RESULTS_KEY]) == 1
     assert result[AGENTPACT_RESULTS_KEY][0]["consumer"] == "research"
     print("PASS test_entry_node_skips_validation")
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: Schema Violations
-# ──────────────────────────────────────────────────────────
 
 def test_bad_pattern_blocks_in_graph():
-    """Invalid symbol pattern should block the handoff."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -226,12 +201,11 @@ def test_bad_pattern_blocks_in_graph():
 
 
 def test_missing_required_field_blocks():
-    """Missing required 'symbol' field should block."""
     registry = make_registry()
     audit = AuditLogger()
 
     def research(state):
-        return {"amount": 5000.0,  # Missing symbol
+        return {"amount": 5000.0,
                 AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
@@ -249,7 +223,6 @@ def test_missing_required_field_blocks():
 
 
 def test_amount_over_max_blocks():
-    """Amount exceeding max_value should block."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -271,12 +244,8 @@ def test_amount_over_max_blocks():
     print("PASS test_amount_over_max_blocks")
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: Policy Violations (Finance Pack)
-# ──────────────────────────────────────────────────────────
 
 def test_ssn_detected_and_blocked():
-    """SSN pattern in note field should trigger FIN-PII-002."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -304,7 +273,6 @@ def test_ssn_detected_and_blocked():
 
 
 def test_large_transaction_without_approval_blocks():
-    """Amount >$10K without human_approved should trigger FIN-AUTH-003."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -331,7 +299,6 @@ def test_large_transaction_without_approval_blocks():
 
 
 def test_large_transaction_with_approval_passes():
-    """Amount >$10K with human_approved=True should pass."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -349,16 +316,13 @@ def test_large_transaction_with_approval_passes():
     result = app.invoke(make_initial_state())
     validations = result[AGENTPACT_RESULTS_KEY]
     assert len(validations) == 1
-    # Should not have FIN-AUTH-003
     policy_violations = validations[0]["violations"]["policy"]
     assert not any(v["rule_id"] == "FIN-AUTH-003" for v in policy_violations)
     print("PASS test_large_transaction_with_approval_passes")
 
 
 def test_mnpi_detection_in_graph():
-    """MNPI keywords in note should trigger FIN-SEC-001."""
     registry = make_registry()
-    # Add SEC scope to the contract
     contract = registry.get_contract_for_handoff("research", "trading")
     contract.required_compliance_scopes = ["SOX", "SEC"]
 
@@ -387,17 +351,13 @@ def test_mnpi_detection_in_graph():
     print("PASS test_mnpi_detection_in_graph")
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: Monitor Mode (non-blocking)
-# ──────────────────────────────────────────────────────────
 
 def test_monitor_mode_logs_but_does_not_block():
-    """With block_on_violation=False, violations are logged but the pipeline completes."""
     registry = make_registry()
     audit = AuditLogger()
 
     def research(state):
-        return {"symbol": "bad", "amount": 5000.0,  # bad pattern
+        return {"symbol": "bad", "amount": 5000.0,
                 AGENTPACT_METADATA_KEY: {"action": "recommend", "request_id": "R1",
                 "timestamp": "t", "initiator": "r"}}
 
@@ -407,7 +367,6 @@ def test_monitor_mode_logs_but_does_not_block():
     app = build_two_node_graph(registry, audit, research, trading, block=False)
     result = app.invoke(make_initial_state())
 
-    # Pipeline completed despite violation
     assert result["note"] == "still executed"
 
     validations = result[AGENTPACT_RESULTS_KEY]
@@ -415,18 +374,13 @@ def test_monitor_mode_logs_but_does_not_block():
     assert validations[0]["result"] == "fail"
     assert validations[0]["total_violations"] > 0
 
-    # Audit should have the failure logged
     failures = audit.get_failures()
     assert len(failures) == 1
     print("PASS test_monitor_mode_logs_but_does_not_block")
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: Audit Trail
-# ──────────────────────────────────────────────────────────
 
 def test_audit_logger_records_all_validations():
-    """Every edge validation should be recorded in the audit log."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -449,7 +403,6 @@ def test_audit_logger_records_all_validations():
 
 
 def test_violation_callback_fires_in_graph():
-    """on_violation callbacks should fire when violations are detected."""
     registry = make_registry()
     audit = AuditLogger()
 
@@ -482,16 +435,11 @@ def test_violation_callback_fires_in_graph():
     print("PASS test_violation_callback_fires_in_graph")
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: No Contract
-# ──────────────────────────────────────────────────────────
 
 def test_no_contract_blocks_handoff():
-    """A handoff between agents with no contract should be blocked."""
     registry = make_registry()
     audit = AuditLogger()
 
-    # Register a third agent with no contract to "trading"
     registry.register_agent(AgentIdentity(
         name="rogue",
         description="Rogue agent",
@@ -525,17 +473,9 @@ def test_no_contract_blocks_handoff():
     print("PASS test_no_contract_blocks_handoff")
 
 
-# ──────────────────────────────────────────────────────────
-# Tests: Metadata Separation
-# ──────────────────────────────────────────────────────────
 
 def test_metadata_separated_from_data():
-    """
-    Domain 'action' field (buy/sell) should not collide with
-    handoff metadata 'action' (recommend/query).
-    """
     registry = make_registry()
-    # Add 'action' to contract schema as a data field
     contract = registry.get_contract_for_handoff("research", "trading")
     contract.request_schema.append(
         FieldContract(name="action", field_type="string", required=False,
@@ -548,7 +488,7 @@ def test_metadata_separated_from_data():
         return {
             "symbol": "AAPL", "amount": 5000.0, "action": "buy",
             AGENTPACT_METADATA_KEY: {
-                "action": "recommend",  # handoff action, not trade action
+                "action": "recommend",
                 "request_id": "R1",
                 "timestamp": "t",
                 "initiator": "r",
@@ -563,14 +503,10 @@ def test_metadata_separated_from_data():
 
     validations = result[AGENTPACT_RESULTS_KEY]
     assert validations[0]["result"] == "pass"
-    # Verify the data action is "buy" but the handoff wasn't flagged
     assert result["action"] == "buy"
     print("PASS test_metadata_separated_from_data")
 
 
-# ──────────────────────────────────────────────────────────
-# Run All Tests
-# ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     tests = [

@@ -1,26 +1,4 @@
-"""
-AgentPact LangGraph Integration
-
-Validates agent-to-agent handoffs at LangGraph state graph edges.
-Wraps node functions so that every state transition is checked against
-the contract registry before the receiving node executes.
-
-Usage:
-    from agentpact.integrations.langgraph import ValidatedGraph
-
-    vg = ValidatedGraph(registry, audit_logger)
-    vg.register_policy_pack(FinancePolicyPack())
-
-    graph = vg.build(State)
-    graph.add_node("research", research_fn)
-    graph.add_node("trading", trading_fn)
-    graph.add_edge(START, "research")
-    graph.add_edge("research", "trading")
-    graph.add_edge("trading", END)
-
-    app = graph.compile()
-    result = app.invoke(initial_state)
-"""
+"""LangGraph integration — validates handoffs at state graph edges."""
 
 from __future__ import annotations
 
@@ -46,24 +24,7 @@ AGENTPACT_METADATA_KEY = "_agentpact_metadata"
 
 
 class ValidatedGraph:
-    """
-    Wraps LangGraph's StateGraph to inject AgentPact validation at every edge.
-
-    Each node function is wrapped so that before it runs, the state transition
-    from the previous node is validated against the contract registry. If the
-    handoff violates a contract with CRITICAL or HIGH severity, a
-    HandoffBlockedError is raised (configurable).
-
-    The graph state must include:
-        _agentpact_last_node: str   — tracks the source node
-        _agentpact_results: list    — accumulates validation results (dicts)
-        _agentpact_metadata: dict   — handoff metadata (action, request_id, etc.)
-
-    Agent node functions should set _agentpact_metadata in their output
-    to specify the handoff action and audit fields (request_id, timestamp,
-    initiator, human_approved). This keeps handoff metadata separate from
-    domain data fields (e.g. trade "action" vs handoff "action").
-    """
+    """Wraps StateGraph to inject validation at every edge."""
 
     def __init__(
         self,
@@ -88,24 +49,11 @@ class ValidatedGraph:
         self._callbacks.append(callback)
 
     def build(self, state_schema: Type) -> _PatchedStateGraph:
-        """
-        Create a StateGraph with AgentPact validation wired in.
-
-        Returns a _PatchedStateGraph that behaves like StateGraph but
-        wraps node functions with validation logic.
-        """
         return _PatchedStateGraph(state_schema, self)
 
     @staticmethod
     def _default_field_extractor(state: dict) -> dict:
-        """
-        Extract handoff data fields from state, excluding internal keys
-        and empty/default values.
-
-        LangGraph state always contains every declared field. Fields with
-        empty-string, zero, None, or empty-list values are excluded so
-        that AgentPact doesn't flag unrelated fields as "unexpected".
-        """
+        # Skip internal keys and empty defaults that LangGraph initializes
         return {
             k: v for k, v in state.items()
             if not k.startswith("_agentpact_")
@@ -114,25 +62,15 @@ class ValidatedGraph:
 
     @staticmethod
     def _default_metadata_extractor(state: dict) -> dict:
-        """
-        Extract handoff metadata from the _agentpact_metadata state key.
-
-        Agent nodes set _agentpact_metadata to specify the handoff action
-        and audit trail fields. This avoids collisions between domain data
-        (e.g. trade action "buy") and handoff metadata (e.g. action "recommend").
-        """
         return dict(state.get(AGENTPACT_METADATA_KEY) or {})
 
     def _validate_transition(
         self, from_node: str, to_node: str, state: dict
     ) -> HandoffValidationResult:
-        """Run AgentPact validation for a state transition."""
         data = self._field_extractor(state)
         metadata = self._metadata_extractor(state)
 
-        # In LangGraph, state accumulates fields from all nodes. To avoid
-        # false "unexpected field" warnings, narrow the data to only fields
-        # defined in the contract schema for this specific edge.
+        # Narrow to contract-scoped fields (LangGraph state accumulates across nodes)
         contract = self.registry.get_contract_for_handoff(from_node, to_node)
         if contract and contract.request_schema:
             contract_fields = {f.name for f in contract.request_schema}
@@ -157,10 +95,6 @@ class ValidatedGraph:
 
 
 class _PatchedStateGraph:
-    """
-    A thin wrapper around StateGraph that intercepts add_node to wrap
-    node functions with AgentPact validation.
-    """
 
     def __init__(self, state_schema: Type, validated_graph: ValidatedGraph):
         self._vg = validated_graph
@@ -204,19 +138,16 @@ class _PatchedStateGraph:
             last_node = state.get(AGENTPACT_STATE_KEY, "")
             new_results: list[dict] = []
 
-            # Validate if there is a source node (skip for entry point)
-            if last_node:
+            if last_node:  # skip entry point
                 result = vg._validate_transition(last_node, node_name, state)
                 new_results.append(result.to_dict())
 
                 if result.is_blocked and vg.block_on_violation:
                     raise HandoffBlockedError(result)
 
-            # Call the real node function
             output = fn(state)
 
-            # Track provenance. Only emit NEW results — the Annotated[list,
-            # operator.add] reducer on _agentpact_results handles accumulation.
+            # Only emit new results; the reducer handles accumulation
             if isinstance(output, dict):
                 output[AGENTPACT_STATE_KEY] = node_name
                 output[AGENTPACT_RESULTS_KEY] = new_results

@@ -1,9 +1,4 @@
-"""
-AgentPact Core Data Models
-
-Extends A2A protocol concepts with contract testing and compliance validation.
-Models are designed around the A2A Agent Card spec + Pact-style contract definitions.
-"""
+"""Core data models for agent contracts, identities, and validation results."""
 
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -14,54 +9,39 @@ from uuid import uuid4
 import json
 
 
-# ──────────────────────────────────────────────────────────
-# Enums
-# ──────────────────────────────────────────────────────────
-
 class ValidationResult(Enum):
     PASS = "pass"
     FAIL = "fail"
     WARN = "warn"
 
 class PolicySeverity(Enum):
-    CRITICAL = "critical"   # Blocks handoff
-    HIGH = "high"           # Blocks handoff
-    MEDIUM = "medium"       # Warning, logged
-    LOW = "low"             # Info only
-    
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
 class HandoffDirection(Enum):
-    REQUEST = "request"     # Consumer -> Provider
-    RESPONSE = "response"   # Provider -> Consumer
+    REQUEST = "request"
+    RESPONSE = "response"
 
 class AuthorityLevel(Enum):
-    """What an agent is authorized to do"""
     READ_ONLY = "read_only"
     READ_WRITE = "read_write"
     EXECUTE = "execute"
     ADMIN = "admin"
 
 
-# ──────────────────────────────────────────────────────────
-# A2A-Compatible Agent Identity
-# ──────────────────────────────────────────────────────────
-
 @dataclass
 class AgentIdentity:
-    """
-    Maps to A2A Agent Card fields.
-    Extended with AgentPact-specific contract metadata.
-    """
     name: str
     description: str
     version: str = "1.0.0"
     url: str = ""
     skills: list[str] = field(default_factory=list)
-    
-    # AgentPact extensions
     authority_level: AuthorityLevel = AuthorityLevel.READ_ONLY
-    allowed_data_domains: list[str] = field(default_factory=list)  # e.g. ["customer_data", "financial_records"]
-    compliance_scopes: list[str] = field(default_factory=list)     # e.g. ["SOX", "SEC", "HIPAA"]
-    max_data_classification: str = "public"                        # public, internal, confidential, restricted
+    allowed_data_domains: list[str] = field(default_factory=list)
+    compliance_scopes: list[str] = field(default_factory=list)
+    max_data_classification: str = "public"
     
     def to_dict(self) -> dict:
         return {
@@ -79,33 +59,21 @@ class AgentIdentity:
         }
 
 
-# ──────────────────────────────────────────────────────────
-# Contract Definitions
-# ──────────────────────────────────────────────────────────
-
 @dataclass
 class FieldContract:
-    """
-    Contract for a single field in a handoff payload.
-    Inspired by Pact matchers + JSON Schema.
-    """
     name: str
-    field_type: str                         # "string", "number", "boolean", "object", "array"
+    field_type: str
     required: bool = True
     description: str = ""
-    
-    # Validation rules
-    pattern: Optional[str] = None           # Regex pattern (like Pact regex matcher)
+    pattern: Optional[str] = None
     min_value: Optional[float] = None
     max_value: Optional[float] = None
-    enum_values: Optional[list] = None      # Allowed values
+    enum_values: Optional[list] = None
     max_length: Optional[int] = None
-    
-    # Compliance metadata
-    data_classification: str = "public"     # public, internal, confidential, restricted
-    pii: bool = False                       # Contains personally identifiable info
-    phi: bool = False                       # Contains protected health info
-    financial_data: bool = False            # Contains financial records
+    data_classification: str = "public"
+    pii: bool = False
+    phi: bool = False
+    financial_data: bool = False
     
     def to_dict(self) -> dict:
         d = {
@@ -129,36 +97,21 @@ class FieldContract:
 
 @dataclass
 class HandoffContract:
-    """
-    Defines the contract for a single agent-to-agent handoff.
-    This is the core primitive — analogous to a Pact interaction
-    but for inter-agent communication.
-    """
     contract_id: str = field(default_factory=lambda: str(uuid4())[:8])
     name: str = ""
     description: str = ""
     version: str = "1.0.0"
-    
-    # Who's involved
-    consumer_agent: str = ""                # Agent receiving/requesting
-    provider_agent: str = ""                # Agent sending/providing
-    
-    # What's being handed off
+    consumer_agent: str = ""
+    provider_agent: str = ""
     request_schema: list[FieldContract] = field(default_factory=list)
     response_schema: list[FieldContract] = field(default_factory=list)
-    
-    # Authority constraints
     required_authority: AuthorityLevel = AuthorityLevel.READ_ONLY
-    allowed_actions: list[str] = field(default_factory=list)    # e.g. ["query", "summarize"]
-    prohibited_actions: list[str] = field(default_factory=list) # e.g. ["delete", "modify", "trade"]
-    
-    # Compliance requirements
+    allowed_actions: list[str] = field(default_factory=list)
+    prohibited_actions: list[str] = field(default_factory=list)
     required_compliance_scopes: list[str] = field(default_factory=list)
     max_data_classification: str = "internal"
     require_audit_trail: bool = True
     require_human_approval: bool = False
-    
-    # SLOs
     max_latency_ms: Optional[int] = None
     timeout_ms: int = 30000
     
@@ -185,25 +138,17 @@ class HandoffContract:
         }
 
 
-# ──────────────────────────────────────────────────────────
-# Runtime Handoff Records
-# ──────────────────────────────────────────────────────────
-
 @dataclass
 class HandoffPayload:
-    """The actual data being passed between agents at runtime."""
     data: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
-    
-    # A2A protocol fields
     task_id: str = ""
     context_id: str = ""
     message_id: str = field(default_factory=lambda: str(uuid4()))
     
 
-@dataclass 
+@dataclass
 class PolicyViolation:
-    """A single policy violation detected during handoff validation."""
     rule_id: str
     rule_name: str
     severity: PolicySeverity
@@ -226,7 +171,6 @@ class PolicyViolation:
 
 @dataclass
 class HandoffValidationResult:
-    """Complete result of validating a single handoff."""
     handoff_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=datetime.utcnow)
     
@@ -234,22 +178,15 @@ class HandoffValidationResult:
     consumer_agent: str = ""
     provider_agent: str = ""
     direction: HandoffDirection = HandoffDirection.REQUEST
-    
-    # Results
     overall_result: ValidationResult = ValidationResult.PASS
     schema_violations: list[PolicyViolation] = field(default_factory=list)
     policy_violations: list[PolicyViolation] = field(default_factory=list)
     authority_violations: list[PolicyViolation] = field(default_factory=list)
-    
-    # Timing
     validation_duration_ms: float = 0.0
-    
-    # The actual payload (for audit trail)
     payload_snapshot: Optional[dict] = None
     
     @property
     def is_blocked(self) -> bool:
-        """Should this handoff be blocked?"""
         all_violations = self.schema_violations + self.policy_violations + self.authority_violations
         return any(
             v.severity in (PolicySeverity.CRITICAL, PolicySeverity.HIGH) 
@@ -289,16 +226,8 @@ class HandoffValidationResult:
         )
 
 
-# ──────────────────────────────────────────────────────────
-# Contract Registry
-# ──────────────────────────────────────────────────────────
-
 @dataclass
 class ContractRegistry:
-    """
-    Stores all contracts and agent identities.
-    In production this would be a database; for MVP it's in-memory.
-    """
     agents: dict[str, AgentIdentity] = field(default_factory=dict)
     contracts: dict[str, HandoffContract] = field(default_factory=dict)
     
@@ -309,7 +238,6 @@ class ContractRegistry:
         self.contracts[contract.contract_id] = contract
     
     def get_contract_for_handoff(self, consumer: str, provider: str) -> Optional[HandoffContract]:
-        """Find the contract that governs a specific agent-to-agent handoff."""
         for contract in self.contracts.values():
             if contract.consumer_agent == consumer and contract.provider_agent == provider:
                 return contract

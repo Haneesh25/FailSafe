@@ -1,10 +1,4 @@
-"""
-AgentPact Audit Trail
-
-Records every handoff validation result for compliance reporting.
-Supports both in-memory (MVP) and SQLite persistence.
-Generates compliance reports for SOX/SEC audit requirements.
-"""
+"""Audit trail with in-memory and SQLite persistence."""
 
 from __future__ import annotations
 import json
@@ -17,11 +11,6 @@ from ..core.models import HandoffValidationResult, ValidationResult, PolicySever
 
 
 class AuditLogger:
-    """
-    Persistent audit trail for all handoff validations.
-    Every validation — pass or fail — is recorded immutably.
-    """
-    
     def __init__(self, db_path: Optional[str] = None):
         self._records: list[HandoffValidationResult] = []
         self._db_path = db_path
@@ -30,7 +19,6 @@ class AuditLogger:
             self._init_db()
     
     def _init_db(self):
-        """Initialize SQLite database for persistent audit trail."""
         conn = sqlite3.connect(self._db_path)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS audit_trail (
@@ -53,14 +41,12 @@ class AuditLogger:
         conn.close()
     
     def log(self, result: HandoffValidationResult) -> None:
-        """Record a validation result."""
         self._records.append(result)
         
         if self._db_path:
             self._persist(result)
     
     def _persist(self, result: HandoffValidationResult) -> None:
-        """Write to SQLite."""
         conn = sqlite3.connect(self._db_path)
         conn.execute(
             """INSERT INTO audit_trail 
@@ -89,11 +75,7 @@ class AuditLogger:
         )
         conn.commit()
         conn.close()
-    
-    # ──────────────────────────────────────────────────────
-    # Query Methods
-    # ──────────────────────────────────────────────────────
-    
+
     def get_all(self) -> list[HandoffValidationResult]:
         return list(self._records)
     
@@ -111,13 +93,8 @@ class AuditLogger:
     
     def get_by_contract(self, contract_id: str) -> list[HandoffValidationResult]:
         return [r for r in self._records if r.contract_id == contract_id]
-    
-    # ──────────────────────────────────────────────────────
-    # Compliance Reports
-    # ──────────────────────────────────────────────────────
-    
+
     def generate_summary_report(self) -> dict:
-        """Generate a summary report suitable for compliance review."""
         total = len(self._records)
         if total == 0:
             return {"total_handoffs": 0, "message": "No handoffs recorded"}
@@ -126,8 +103,7 @@ class AuditLogger:
         warned = sum(1 for r in self._records if r.overall_result == ValidationResult.WARN)
         failed = sum(1 for r in self._records if r.overall_result == ValidationResult.FAIL)
         blocked = sum(1 for r in self._records if r.is_blocked)
-        
-        # Violation breakdown by severity
+
         all_violations = []
         for r in self._records:
             all_violations.extend(r.schema_violations)
@@ -137,16 +113,14 @@ class AuditLogger:
         severity_counts = {}
         for v in all_violations:
             severity_counts[v.severity.value] = severity_counts.get(v.severity.value, 0) + 1
-        
-        # Most common violations
+
         rule_counts = {}
         for v in all_violations:
             key = f"{v.rule_id}: {v.rule_name}"
             rule_counts[key] = rule_counts.get(key, 0) + 1
         
         top_violations = sorted(rule_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-        
-        # Per-agent breakdown
+
         agent_stats = {}
         for r in self._records:
             for agent in [r.consumer_agent, r.provider_agent]:
@@ -189,7 +163,6 @@ class AuditLogger:
         }
     
     def print_report(self) -> str:
-        """Generate a human-readable compliance report."""
         report = self.generate_summary_report()
         
         if report.get("summary", {}).get("total_handoffs", 0) == 0:
