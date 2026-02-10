@@ -37,7 +37,7 @@ except ImportError:
 
 
 
-class TestState(TypedDict):
+class HandoffState(TypedDict):
     symbol: str
     amount: float
     note: str
@@ -114,7 +114,7 @@ def build_two_node_graph(registry, audit, research_fn, trading_fn,
     if policy_pack:
         vg.register_policy_pack(policy_pack)
 
-    graph = vg.build(TestState)
+    graph = vg.build(HandoffState)
     graph.add_node("research", research_fn)
     graph.add_node("trading", trading_fn)
     graph.add_edge(START, "research")
@@ -411,7 +411,7 @@ def test_violation_callback_fires_in_graph():
     vg = ValidatedGraph(registry, audit, block_on_violation=False)
     vg.on_violation(lambda r: callback_results.append(r))
 
-    graph = vg.build(TestState)
+    graph = vg.build(HandoffState)
 
     def research(state):
         return {"symbol": "bad", "amount": 5000.0,
@@ -449,7 +449,7 @@ def test_no_contract_blocks_handoff():
     ))
 
     vg = ValidatedGraph(registry, audit, block_on_violation=True)
-    graph = vg.build(TestState)
+    graph = vg.build(HandoffState)
 
     def rogue(state):
         return {"symbol": "HACK", "amount": 1.0,

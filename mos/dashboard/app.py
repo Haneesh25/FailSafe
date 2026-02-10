@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 import os
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,10 +19,9 @@ from agentpact.core.models import (
     ContractRegistry,
     FieldContract,
     HandoffContract,
-    HandoffValidationResult,
 )
 from agentpact.policies.finance import FinancePolicyPack
-from agentpact.interceptor.middleware import HandoffInterceptor, HandoffBlockedError
+from agentpact.interceptor.middleware import HandoffInterceptor
 from agentpact.audit.logger import AuditLogger
 
 

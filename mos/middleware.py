@@ -5,15 +5,15 @@ import json
 from typing import Any, Callable, Optional
 from datetime import datetime
 
-from ..core.models import (
+from models import (
     ContractRegistry,
     HandoffDirection,
     HandoffPayload,
     HandoffValidationResult,
     ValidationResult,
 )
-from ..core.engine import ValidationEngine
-from ..audit.logger import AuditLogger
+from engine import ValidationEngine
+from logger import AuditLogger
 
 
 class HandoffInterceptor:

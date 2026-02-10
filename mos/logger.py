@@ -3,11 +3,11 @@
 from __future__ import annotations
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from ..core.models import HandoffValidationResult, ValidationResult, PolicySeverity
+from models import HandoffValidationResult, ValidationResult, PolicySeverity
 
 
 class AuditLogger:
@@ -137,7 +137,7 @@ class AuditLogger:
         avg_duration = sum(r.validation_duration_ms for r in self._records) / total
         
         return {
-            "report_generated": datetime.utcnow().isoformat(),
+            "report_generated": datetime.now(timezone.utc).isoformat(),
             "period": {
                 "start": min(r.timestamp for r in self._records).isoformat(),
                 "end": max(r.timestamp for r in self._records).isoformat(),

@@ -27,12 +27,17 @@ class HandoffInterceptor:
         self.audit = audit_logger or AuditLogger()
         self.block_on_failure = block_on_failure
         self._callbacks: list[Callable] = []
-    
+        self._validation_callbacks: list[Callable] = []
+
     def register_policy_pack(self, policy_pack) -> None:
         self.engine.register_policy_pack(policy_pack)
 
     def on_violation(self, callback: Callable[[HandoffValidationResult], None]) -> None:
         self._callbacks.append(callback)
+
+    def on_validation(self, callback: Callable[[HandoffValidationResult], None]) -> None:
+        """Register callback that fires on every validation (pass, warn, or fail)."""
+        self._validation_callbacks.append(callback)
     
     def validate_outgoing(
         self,
@@ -54,13 +59,16 @@ class HandoffInterceptor:
         )
         
         self.audit.log(result)
-        
+
+        for cb in self._validation_callbacks:
+            cb(result)
+
         if result.total_violations > 0:
             for cb in self._callbacks:
                 cb(result)
-        
+
         return result
-    
+
     def validate_incoming(
         self,
         from_agent: str,
@@ -81,13 +89,16 @@ class HandoffInterceptor:
         )
         
         self.audit.log(result)
-        
+
+        for cb in self._validation_callbacks:
+            cb(result)
+
         if result.total_violations > 0:
             for cb in self._callbacks:
                 cb(result)
-        
+
         return result
-    
+
     def wrap_a2a_message(
         self,
         from_agent: str,

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
-import json
 
 
 class ValidationResult(Enum):
@@ -177,7 +176,7 @@ class PolicyViolation:
 @dataclass
 class HandoffValidationResult:
     handoff_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     contract_id: str = ""
     consumer_agent: str = ""

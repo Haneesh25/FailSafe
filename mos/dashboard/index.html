@@ -567,7 +567,6 @@
 <nav>
   <div class="wrap nav-inner">
     <div class="brand">
-      <div class="brand-mark">A</div>
       <span class="brand-name">Failsafe</span>
     </div>
     <div class="nav-meta">
@@ -639,6 +638,14 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-title tip tip-right" data-tip="Each agent's identity, capabilities, authority level, data access domains, and compliance scopes. Click 'View config' to see the raw registration code.">Agents</span>
+      <span class="sec-sub" id="agent-ct"></span>
+    </div>
+    <div class="agent-grid" id="agent-list"><div class="empty">Loading</div></div>
   </div>
 
   <div class="sec">
@@ -896,6 +903,97 @@ function switchTab(i, tab) {
   tabs.forEach((t, j) => t.classList.toggle('active', (tab === 'payload' ? j === 0 : j === 1)));
 }
 
+const AGENT_COLORS = {customer_service:'n0', research_agent:'n1', trading_agent:'n2', compliance_agent:'n3'};
+const AGENT_ABBR = {customer_service:'CS', research_agent:'RA', trading_agent:'TA', compliance_agent:'CA'};
+
+const AGENT_CODE = {
+  customer_service: `registry.register_agent(AgentIdentity(
+    name="customer_service",
+    description="Handles customer inquiries and routes requests",
+    skills=["customer_inquiry", "account_lookup", "route_request"],
+    authority_level=AuthorityLevel.READ_ONLY,
+    allowed_data_domains=["customer_data", "pii"],
+    compliance_scopes=["SOX", "SEC"],
+    max_data_classification="confidential",
+))`,
+  research_agent: `registry.register_agent(AgentIdentity(
+    name="research_agent",
+    description="Analyzes market data and generates investment recommendations",
+    skills=["market_analysis", "portfolio_analysis", "risk_assessment"],
+    authority_level=AuthorityLevel.READ_WRITE,
+    allowed_data_domains=["financial_records", "market_data"],
+    compliance_scopes=["SOX", "SEC", "FINRA"],
+    max_data_classification="restricted",
+))`,
+  trading_agent: `registry.register_agent(AgentIdentity(
+    name="trading_agent",
+    description="Executes approved trades and portfolio rebalancing",
+    skills=["execute_trade", "portfolio_rebalance"],
+    authority_level=AuthorityLevel.EXECUTE,
+    allowed_data_domains=["financial_records", "market_data"],
+    compliance_scopes=["SOX", "SEC", "FINRA"],
+    max_data_classification="restricted",
+))`,
+  compliance_agent: `registry.register_agent(AgentIdentity(
+    name="compliance_agent",
+    description="Reviews transactions for regulatory compliance",
+    skills=["compliance_review", "risk_check", "audit_report"],
+    authority_level=AuthorityLevel.ADMIN,
+    allowed_data_domains=["financial_records", "pii", "market_data", "customer_data"],
+    compliance_scopes=["SOX", "SEC", "FINRA", "PCI-DSS"],
+    max_data_classification="restricted",
+))`,
+};
+
+function renderAgentCards(agents) {
+  const el = $('agent-list');
+  const names = Object.keys(agents);
+  $('agent-ct').textContent = names.length + ' registered';
+  if (!names.length) { el.innerHTML = '<div class="empty">No agents</div>'; return; }
+  el.innerHTML = names.map((name, i) => {
+    const a = agents[name];
+    const fs = a.failsafe || {};
+    const color = AGENT_COLORS[name] || 'n0';
+    const abbr = AGENT_ABBR[name] || name.slice(0,2).toUpperCase();
+    const authLevel = fs.authority_level || 'read_only';
+    const skills = (a.skills || []).map(s => `<span class="agent-tag skill">${esc(s)}</span>`).join('');
+    const domains = (fs.allowed_data_domains || []).map(d => `<span class="agent-tag domain">${esc(d)}</span>`).join('');
+    const scopes = (fs.compliance_scopes || []).map(s => `<span class="agent-tag scope">${esc(s)}</span>`).join('');
+    const code = AGENT_CODE[name] || JSON.stringify(a, null, 2);
+
+    return `<div class="agent-card">
+      <div class="agent-head">
+        <div class="agent-av pl-avatar ${color}">${abbr}</div>
+        <div class="agent-info">
+          <div class="agent-name">${esc(name)}</div>
+          <div class="agent-desc">${esc(a.description || '')}</div>
+        </div>
+      </div>
+      <div class="agent-section">
+        <div class="agent-section-lbl">Authority</div>
+        <div class="agent-tags">
+          <span class="agent-tag auth auth-${authLevel}">${authLevel.replace('_', ' ')}</span>
+          <span class="agent-tag domain">${esc(fs.max_data_classification || 'public')} clearance</span>
+        </div>
+      </div>
+      <div class="agent-section">
+        <div class="agent-section-lbl">Skills</div>
+        <div class="agent-tags">${skills || '<span style="color:var(--text-4);font-size:11px">None</span>'}</div>
+      </div>
+      <div class="agent-section">
+        <div class="agent-section-lbl">Data Domains</div>
+        <div class="agent-tags">${domains || '<span style="color:var(--text-4);font-size:11px">None</span>'}</div>
+      </div>
+      <div class="agent-section">
+        <div class="agent-section-lbl">Compliance</div>
+        <div class="agent-tags">${scopes || '<span style="color:var(--text-4);font-size:11px">None</span>'}</div>
+      </div>
+      <div class="agent-code" id="ac-${i}">${esc(code)}</div>
+      <div class="agent-toggle" onclick="$('ac-${i}').classList.toggle('open');this.textContent=$('ac-${i}').classList.contains('open')?'Hide config':'View config'">View config</div>
+    </div>`;
+  }).join('');
+}
+
 function renderContracts(contracts) {
   const el = $('ctr-list');
   const ids = Object.keys(contracts);
@@ -1065,11 +1163,12 @@ async function sim(scenario) {
 }
 
 async function load() {
-  const [summary, handoffs, contracts] = await Promise.all([F('/api/summary'), F('/api/handoffs'), F('/api/contracts')]);
+  const [summary, handoffs, contracts, agents] = await Promise.all([F('/api/summary'), F('/api/handoffs'), F('/api/contracts'), F('/api/agents')]);
   renderStats(summary);
   renderViolations(summary);
   renderAgents(summary);
   renderHandoffs(handoffs);
+  renderAgentCards(agents);
   renderContracts(contracts);
   renderTerminal(handoffs);
   updateEdges(handoffs);

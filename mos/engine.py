@@ -5,7 +5,7 @@ import re
 import time
 from typing import Any, Optional
 
-from .models import (
+from models import (
     AgentIdentity,
     AuthorityLevel,
     ContractRegistry,

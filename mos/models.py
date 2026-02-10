@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
-import json
 
 
 class ValidationResult(Enum):
@@ -159,7 +158,7 @@ class PolicyViolation:
     policy_pack: str = ""
     
     def to_dict(self) -> dict:
-        return {
+        d = {
             "rule_id": self.rule_id,
             "rule_name": self.rule_name,
             "severity": self.severity.value,
@@ -167,12 +166,17 @@ class PolicyViolation:
             "field_path": self.field_path,
             "policy_pack": self.policy_pack,
         }
+        if self.expected is not None:
+            d["expected"] = str(self.expected)
+        if self.actual is not None:
+            d["actual"] = str(self.actual)
+        return d
 
 
 @dataclass
 class HandoffValidationResult:
     handoff_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     contract_id: str = ""
     consumer_agent: str = ""
@@ -214,6 +218,7 @@ class HandoffValidationResult:
             },
             "total_violations": self.total_violations,
             "validation_duration_ms": self.validation_duration_ms,
+            "payload": self.payload_snapshot,
         }
     
     def summary(self) -> str:
