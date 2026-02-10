@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentPact</title>
+<style>
+  /* ── Reset & Base ──────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0a0a;
+    --bg-card:   #111111;
+    --bg-hover:  #1a1a1a;
+    --border:    #222222;
+    --border-l:  #333333;
+    --text:      #e5e5e5;
+    --text-dim:  #777777;
+    --text-muted:#555555;
+    --accent:    #3b82f6;
+    --green:     #22c55e;
+    --red:       #ef4444;
+    --orange:    #f59e0b;
+    --purple:    #a855f7;
+    --radius:    12px;
+    --radius-sm: 8px;
+    --font:      -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    --mono:      'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Layout ────────────────────────────────────────── */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ── Header ────────────────────────────────────────── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    position: sticky;
+    top: 0;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+    font-weight: 700;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── Stats Row ─────────────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 24px 0;
+  }
+
+  .stat {
+    background: var(--bg-card);
+    padding: 20px 24px;
+    transition: background 0.15s;
+  }
+
+  .stat:hover { background: var(--bg-hover); }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.orange { color: var(--orange); }
+
+  /* ── Section Headers ───────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 32px 0 16px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .section-subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* ── Pipeline Visualization ────────────────────────── */
+  .pipeline {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    margin-bottom: 24px;
+  }
+
+  .pipeline-nodes {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+
+  .pipeline-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    min-width: 140px;
+  }
+
+  .node-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+  }
+
+  .node-avatar.cs { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+  .node-avatar.ra { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+  .node-avatar.ta { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .node-avatar.ca { background: linear-gradient(135deg, #22c55e, #10b981); }
+
+  .node-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .node-role {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .pipeline-edge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px;
+    min-width: 60px;
+  }
+
+  .edge-line {
+    width: 48px;
+    height: 2px;
+    border-radius: 1px;
+    position: relative;
+  }
+
+  .edge-line::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -3px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+  }
+
+  .edge-line.pass { background: var(--green); }
+  .edge-line.pass::after { border-left: 6px solid var(--green); }
+  .edge-line.fail { background: var(--red); }
+  .edge-line.fail::after { border-left: 6px solid var(--red); }
+  .edge-line.idle { background: var(--border-l); }
+  .edge-line.idle::after { border-left: 6px solid var(--border-l); }
+
+  .edge-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+  }
+
+  /* ── Simulate Buttons ──────────────────────────────── */
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border: 1px solid var(--border-l);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-muted);
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .btn.primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+
+  /* ── Two Column Layout ─────────────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── Violations Table ──────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .violation-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    transition: background 0.1s;
+  }
+
+  .violation-row:last-child { border-bottom: none; }
+  .violation-row:hover { background: var(--bg-hover); }
+
+  .severity-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  .severity-badge.critical { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+  .severity-badge.high { background: rgba(245, 158, 11, 0.15); color: var(--orange); }
+  .severity-badge.medium { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
+  .severity-badge.low { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+
+  .violation-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 100px;
+  }
+
+  .violation-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* ── Handoff List ──────────────────────────────────── */
+  .handoff-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 80px 60px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    transition: background 0.1s;
+  }
+
+  .handoff-row:last-child { border-bottom: none; }
+  .handoff-row:hover { background: var(--bg-hover); }
+
+  .result-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+
+  .result-badge.pass { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+  .result-badge.fail { background: rgba(239, 68, 68, 0.12); color: var(--red); }
+  .result-badge.warn { background: rgba(245, 158, 11, 0.12); color: var(--orange); }
+
+  .handoff-agents {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .handoff-arrow {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .handoff-agent {
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+
+  .handoff-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  .handoff-violations {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  /* ── Bar Chart ─────────────────────────────────────── */
+  .bar-chart {
+    padding: 16px 20px;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .bar-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 120px;
+    font-family: var(--mono);
+    text-align: right;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.red { background: var(--red); }
+  .bar-fill.orange { background: var(--orange); }
+  .bar-fill.purple { background: var(--purple); }
+
+  .bar-value {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    min-width: 36px;
+  }
+
+  /* ── Toast ─────────────────────────────────────────── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--bg-card);
+    border: 1px solid var(--border-l);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-size: 13px;
+    animation: toast-in 0.3s ease, toast-out 0.3s ease 2.7s;
+    max-width: 360px;
+  }
+
+  .toast.pass { border-left: 3px solid var(--green); }
+  .toast.fail { border-left: 3px solid var(--red); }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes toast-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  /* ── Scrollbar ─────────────────────────────────────── */
+  .scroll-area {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .scroll-area::-webkit-scrollbar { width: 6px; }
+  .scroll-area::-webkit-scrollbar-track { background: transparent; }
+  .scroll-area::-webkit-scrollbar-thumb { background: var(--border-l); border-radius: 3px; }
+
+  /* ── Empty state ───────────────────────────────────── */
+  .empty {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ── Loading shimmer ───────────────────────────────── */
+  .loading {
+    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="container header-inner">
+    <div class="logo">
+      <div class="logo-icon">A</div>
+      <span>AgentPact</span>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span id="agent-count">4 agents</span> &middot; <span id="contract-count">3 contracts</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats" id="stats">
+    <div class="stat">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total Handoffs</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value green" id="stat-pass">—</div>
+      <div class="stat-label">Passed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value red" id="stat-fail">—</div>
+      <div class="stat-label">Failed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value orange" id="stat-blocked">—</div>
+      <div class="stat-label">Blocked</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="section-header">
+    <span class="section-title">Agent Pipeline</span>
+    <span class="section-subtitle">Contract-validated handoff chain</span>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipeline-nodes" id="pipeline">
+      <div class="pipeline-node">
+        <div class="node-avatar cs">CS</div>
+        <div class="node-name">Customer Service</div>
+        <div class="node-role">READ_ONLY</div>
+      </div>
+      <div class="pipeline-edge">
+        <div class="edge-line idle" id="edge-cs-ra"></div>
+        <div class="edge-label">CTR-001</div>
+      </div>
+      <div class="pipeline-node">
+        <div class="node-avatar ra">RA</div>
+        <div class="node-name">Research</div>
+        <div class="node-role">READ_WRITE</div>
+      </div>
+      <div class="pipeline-edge">
+        <div class="edge-line idle" id="edge-ra-ta"></div>
+        <div class="edge-label">CTR-002</div>
+      </div>
+      <div class="pipeline-node">
+        <div class="node-avatar ta">TA</div>
+        <div class="node-name">Trading</div>
+        <div class="node-role">EXECUTE</div>
+      </div>
+      <div class="pipeline-edge">
+        <div class="edge-line idle" id="edge-ta-ca"></div>
+        <div class="edge-label">CTR-003</div>
+      </div>
+      <div class="pipeline-node">
+        <div class="node-avatar ca">CA</div>
+        <div class="node-name">Compliance</div>
+        <div class="node-role">ADMIN</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulate -->
+  <div class="section-header">
+    <span class="section-title">Simulate</span>
+    <span class="section-subtitle">Run validation scenarios in real-time</span>
+  </div>
+
+  <div class="actions" style="margin-bottom: 24px;">
+    <button class="btn primary" onclick="simulate('happy')">Valid Handoff</button>
+    <button class="btn" onclick="simulate('ssn_leak')">SSN Leak</button>
+    <button class="btn" onclick="simulate('large_tx')">Large Transaction</button>
+    <button class="btn" onclick="simulate('authority_escalation')">Authority Escalation</button>
+  </div>
+
+  <!-- Two column: Violations + Agent Stats -->
+  <div class="two-col">
+    <!-- Top Violations -->
+    <div class="card">
+      <div class="card-header">
+        <span>Top Violations</span>
+        <span class="section-subtitle" id="violation-total"></span>
+      </div>
+      <div class="scroll-area" id="violations-list">
+        <div class="empty">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Agent Breakdown -->
+    <div class="card">
+      <div class="card-header">
+        <span>Agent Activity</span>
+      </div>
+      <div class="bar-chart" id="agent-bars">
+        <div class="empty">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Handoff Log -->
+  <div class="section-header">
+    <span class="section-title">Audit Trail</span>
+    <span class="section-subtitle" id="handoff-count"></span>
+  </div>
+
+  <div class="card" style="margin-bottom: 48px;">
+    <div class="scroll-area" id="handoff-list">
+      <div class="empty">Loading...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+  // ── API ────────────────────────────────────────────────
+  async function fetchJSON(url) {
+    const r = await fetch(url);
+    return r.json();
+  }
+
+  // ── Render ─────────────────────────────────────────────
+  function renderStats(summary) {
+    const s = summary.summary;
+    document.getElementById('stat-total').textContent = s.total_handoffs;
+    document.getElementById('stat-pass').textContent = s.passed;
+    document.getElementById('stat-fail').textContent = s.failed;
+    document.getElementById('stat-blocked').textContent = s.blocked;
+  }
+
+  function renderViolations(summary) {
+    const el = document.getElementById('violations-list');
+    const violations = (summary.violations && summary.violations.top_violations) || [];
+    const totalEl = document.getElementById('violation-total');
+
+    if (!violations.length) {
+      el.innerHTML = '<div class="empty">No violations recorded</div>';
+      return;
+    }
+
+    totalEl.textContent = `${violations.length} types`;
+
+    el.innerHTML = violations.map(v => {
+      // rule format is "RULE_ID: Rule Name" — extract the ID and severity from the rule string
+      const ruleStr = v.rule || '';
+      const ruleId = ruleStr.split(':')[0].trim();
+      const ruleName = ruleStr.split(':').slice(1).join(':').trim();
+      // Guess severity from rule ID
+      const sev = ruleId.startsWith('FIN-PII') || ruleId.startsWith('FIN-AUTH-001') || ruleId.startsWith('FIN-AUTH-002') || ruleId.startsWith('FIN-DATA') || ruleId.startsWith('FIN-AUDIT-002') ? 'critical'
+        : ruleId.startsWith('FIN-') ? 'high'
+        : ruleId.startsWith('SCHEMA_001') || ruleId.startsWith('CONTRACT') ? 'high'
+        : ruleId.startsWith('AUTH_') ? 'high'
+        : 'medium';
+      return `<div class="violation-row">
+        <span class="severity-badge ${sev}">${sev}</span>
+        <span class="violation-id">${ruleId}</span>
+        <span style="flex:1;color:var(--text-dim)">${truncate(ruleName || ruleId, 50)}</span>
+        <span class="violation-count">${v.count}x</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderAgentBars(summary) {
+    const el = document.getElementById('agent-bars');
+    const agents = summary.agents || {};
+    const names = Object.keys(agents);
+
+    if (!names.length) {
+      el.innerHTML = '<div class="empty">No agent data</div>';
+      return;
+    }
+
+    const maxTotal = Math.max(...names.map(n => agents[n].total || 1));
+
+    el.innerHTML = names.map(name => {
+      const a = agents[name];
+      const passW = ((a.passed / maxTotal) * 100).toFixed(1);
+      const failW = ((a.failed / maxTotal) * 100).toFixed(1);
+      return `<div class="bar-row">
+        <span class="bar-label">${shortName(name)}</span>
+        <div class="bar-track">
+          <div class="bar-fill green" style="width:${passW}%;display:inline-block"></div>
+          <div class="bar-fill red" style="width:${failW}%;display:inline-block"></div>
+        </div>
+        <span class="bar-value">${a.total}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderHandoffs(handoffs) {
+    const el = document.getElementById('handoff-list');
+    const countEl = document.getElementById('handoff-count');
+
+    countEl.textContent = `${handoffs.length} records`;
+
+    if (!handoffs.length) {
+      el.innerHTML = '<div class="empty">No handoffs recorded</div>';
+      return;
+    }
+
+    // Newest first
+    const sorted = [...handoffs].reverse();
+
+    el.innerHTML = sorted.map(h => {
+      const result = h.result || 'pass';
+      const time = h.timestamp ? new Date(h.timestamp).toLocaleTimeString() : '';
+      return `<div class="handoff-row">
+        <span class="result-badge ${result}">${result}</span>
+        <div class="handoff-agents">
+          <span class="handoff-agent">${shortName(h.consumer)}</span>
+          <span class="handoff-arrow">&rarr;</span>
+          <span class="handoff-agent">${shortName(h.provider)}</span>
+        </div>
+        <span class="handoff-time">${time}</span>
+        <span class="handoff-violations">${h.total_violations}v</span>
+      </div>`;
+    }).join('');
+  }
+
+  function updateEdges(handoffs) {
+    const edgeMap = {
+      'customer_service:research_agent': 'edge-cs-ra',
+      'research_agent:trading_agent': 'edge-ra-ta',
+      'trading_agent:compliance_agent': 'edge-ta-ca',
+    };
+
+    // Reset
+    Object.values(edgeMap).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.className = 'edge-line idle';
+    });
+
+    // Set based on most recent handoff per edge
+    for (const h of handoffs) {
+      const key = `${h.consumer}:${h.provider}`;
+      const elId = edgeMap[key];
+      if (elId) {
+        const el = document.getElementById(elId);
+        if (el) {
+          el.className = `edge-line ${h.blocked ? 'fail' : (h.result === 'pass' ? 'pass' : 'fail')}`;
+        }
+      }
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────
+  function shortName(name) {
+    const map = {
+      'customer_service': 'customer_svc',
+      'research_agent': 'research',
+      'trading_agent': 'trading',
+      'compliance_agent': 'compliance',
+    };
+    return map[name] || name;
+  }
+
+  function truncate(s, n) {
+    return s.length > n ? s.slice(0, n) + '...' : s;
+  }
+
+  // ── Toast ──────────────────────────────────────────────
+  function showToast(message, type) {
+    const container = document.getElementById('toasts');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  // ── Simulate ───────────────────────────────────────────
+  async function simulate(scenario) {
+    try {
+      const r = await fetch(`/api/simulate/${scenario}`, { method: 'POST' });
+      const data = await r.json();
+
+      if (data.error) {
+        showToast(`Error: ${data.error}`, 'fail');
+        return;
+      }
+
+      const result = data.result || 'pass';
+      const blocked = data.blocked || false;
+      const label = {
+        happy: 'Valid handoff',
+        ssn_leak: 'SSN leak test',
+        large_tx: 'Large transaction',
+        authority_escalation: 'Authority escalation',
+      }[scenario] || scenario;
+
+      if (result === 'pass') {
+        showToast(`${label}: PASSED — ${data.total_violations} violations`, 'pass');
+      } else {
+        showToast(`${label}: ${blocked ? 'BLOCKED' : 'FAILED'} — ${data.total_violations} violations`, 'fail');
+      }
+
+      // Refresh data
+      await refresh();
+    } catch (e) {
+      showToast(`Error: ${e.message}`, 'fail');
+    }
+  }
+
+  // ── Refresh ────────────────────────────────────────────
+  async function refresh() {
+    const [summary, handoffs] = await Promise.all([
+      fetchJSON('/api/summary'),
+      fetchJSON('/api/handoffs'),
+    ]);
+
+    renderStats(summary);
+    renderViolations(summary);
+    renderAgentBars(summary);
+    renderHandoffs(handoffs);
+    updateEdges(handoffs);
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  refresh();
+</script>
+</body>
+</html>
