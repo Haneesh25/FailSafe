@@ -3,6 +3,8 @@ import {
   ReactFlow,
   Background,
   Controls,
+  Handle,
+  Position,
   useNodesState,
   useEdgesState,
   MarkerType,
@@ -21,10 +23,14 @@ function AgentNode({ data }) {
 
   return (
     <div className={`agent-node ${statusClass}`}>
+      <Handle type="target" position={Position.Top} style={{ background: 'transparent', border: 'none' }} />
+      <Handle type="target" position={Position.Left} id="left-target" style={{ background: 'transparent', border: 'none' }} />
       <div className="node-label">{data.label}</div>
       {data.description && (
         <div className="node-meta">{data.description}</div>
       )}
+      <Handle type="source" position={Position.Bottom} style={{ background: 'transparent', border: 'none' }} />
+      <Handle type="source" position={Position.Right} id="right-source" style={{ background: 'transparent', border: 'none' }} />
     </div>
   );
 }

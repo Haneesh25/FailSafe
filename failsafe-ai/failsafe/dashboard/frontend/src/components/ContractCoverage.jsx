@@ -48,67 +48,86 @@ export default function ContractCoverage({ coverage, contracts, onCellClick }) {
       <div className="card">
         <div className="card-body">
           <div className="coverage-grid">
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'right', paddingRight: 12 }}>Source \ Target</th>
-                  {agents.map((a) => (
-                    <th key={a} style={{ textAlign: 'center', minWidth: 60 }}>
-                      {a}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {agents.map((source) => (
-                  <tr key={source}>
-                    <td style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      textAlign: 'right',
-                      paddingRight: 12,
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {source}
-                    </td>
-                    {agents.map((target) => {
-                      const status = coverage[source]?.[target] || 'no-comm';
-                      const cellClass = status === 'covered'
-                        ? 'covered'
-                        : status === 'uncovered'
-                        ? 'uncovered'
-                        : status === 'self'
-                        ? 'self'
-                        : 'no-comm';
+            <div style={{ display: 'inline-grid', gridTemplateColumns: `auto repeat(${agents.length}, 44px)`, gap: 3, alignItems: 'center' }}>
+              {/* Header row */}
+              <div style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                textAlign: 'right',
+                paddingRight: 8,
+              }}>
+                Source ↓ Target →
+              </div>
+              {agents.map((a) => (
+                <div key={`h-${a}`} style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: 'var(--text-muted)',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }} title={a}>
+                  {a.replace(/_agent$/, '')}
+                </div>
+              ))}
 
-                      return (
-                        <td key={target} style={{ padding: 2 }}>
-                          <div
-                            className={`coverage-cell ${cellClass}`}
-                            title={`${source} -> ${target}: ${cellTitle[status] || status}`}
-                            onClick={() => {
-                              if (status === 'covered' && onCellClick) {
-                                const c = findContract(source, target);
-                                if (c) onCellClick(c);
-                              }
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: status === 'covered' ? 'pointer' : 'default',
-                            }}
-                          >
-                            {cellSymbol[status] || ''}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              {/* Data rows */}
+              {agents.map((source) => (
+                <React.Fragment key={source}>
+                  <div style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    textAlign: 'right',
+                    paddingRight: 8,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {source.replace(/_agent$/, '')}
+                  </div>
+                  {agents.map((target) => {
+                    const status = coverage[source]?.[target] || 'no-comm';
+                    const cellClass = status === 'covered'
+                      ? 'covered'
+                      : status === 'uncovered'
+                      ? 'uncovered'
+                      : status === 'self'
+                      ? 'self'
+                      : 'no-comm';
+
+                    return (
+                      <div
+                        key={target}
+                        className={`coverage-cell ${cellClass}`}
+                        title={`${source} → ${target}: ${cellTitle[status] || status}`}
+                        onClick={() => {
+                          if (status === 'covered' && onCellClick) {
+                            const c = findContract(source, target);
+                            if (c) onCellClick(c);
+                          }
+                        }}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: status === 'covered' ? 'pointer' : 'default',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {cellSymbol[status] || ''}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
 
           {/* Legend */}
