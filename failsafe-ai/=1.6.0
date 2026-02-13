@@ -1,0 +1,7 @@
+Requirement already satisfied: sse-starlette in ./venv/lib/python3.14/site-packages (3.2.0)
+Requirement already satisfied: starlette>=0.49.1 in ./venv/lib/python3.14/site-packages (from sse-starlette) (0.52.1)
+Requirement already satisfied: anyio>=4.7.0 in ./venv/lib/python3.14/site-packages (from sse-starlette) (4.12.1)
+Requirement already satisfied: idna>=2.8 in ./venv/lib/python3.14/site-packages (from anyio>=4.7.0->sse-starlette) (3.11)
+
+[notice] A new release of pip is available: 25.2 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip

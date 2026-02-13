@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { IconShield } from './Icons.jsx';
 
 /**
  * Matrix/heatmap showing contract coverage between agent pairs.
@@ -27,12 +28,13 @@ export default function ContractCoverage({ coverage, contracts, onCellClick }) {
     return (
       <div>
         <div className="page-header">
-          <h2>Contract Coverage</h2>
-          <p>Heatmap of handoff contract coverage between agents</p>
+          <h2>Coverage</h2>
+          <p>Which agent pairs have contracts and how they're performing</p>
         </div>
         <div className="empty-state">
-          <div className="icon">{'\u25A6'}</div>
-          <p>No agents registered yet.</p>
+          <div className="empty-state-icon"><IconShield size={36} /></div>
+          <p className="empty-state-title">No agents registered</p>
+          <p className="empty-state-desc">Register agents and contracts to see coverage across your system.</p>
         </div>
       </div>
     );
@@ -41,8 +43,8 @@ export default function ContractCoverage({ coverage, contracts, onCellClick }) {
   return (
     <div>
       <div className="page-header">
-        <h2>Contract Coverage</h2>
-        <p>Matrix showing which agent pairs have contracts defined. Click a covered cell to view the contract.</p>
+        <h2>Coverage</h2>
+        <p>Which agent pairs have contracts defined. Click a covered cell to view details.</p>
       </div>
 
       <div className="card">

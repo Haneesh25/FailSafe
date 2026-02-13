@@ -45,24 +45,33 @@ export default function InteractionLog({ validations, onRowClick, onContractClic
   return (
     <div>
       <div className="page-header">
-        <h2>Interaction Log</h2>
-        <p>All recorded handoff validations from the audit log</p>
+        <h2>History</h2>
+        <p>Audit trail of all agent handoff validations</p>
       </div>
 
       <div className="filter-bar">
-        <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)}>
-          <option value="">All Sources</option>
-          {agents.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select value={filterTarget} onChange={(e) => setFilterTarget(e.target.value)}>
-          <option value="">All Targets</option>
-          {agents.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="all">All Status</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-        </select>
+        <label className="filter-label">
+          Source
+          <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)}>
+            <option value="">All</option>
+            {agents.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </label>
+        <label className="filter-label">
+          Target
+          <select value={filterTarget} onChange={(e) => setFilterTarget(e.target.value)}>
+            <option value="">All</option>
+            {agents.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </label>
+        <label className="filter-label">
+          Status
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="all">All</option>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+          </select>
+        </label>
         <input
           type="text"
           placeholder="Filter by trace ID..."
@@ -103,7 +112,7 @@ export default function InteractionLog({ validations, onRowClick, onContractClic
                   return (
                     <tr
                       key={v.handoff_id || i}
-                      className="clickable"
+                      className={`clickable${!passed ? ' severity-high' : ''}`}
                       onClick={() => {
                         if (!passed && onRowClick) {
                           onRowClick(v.handoff_id);

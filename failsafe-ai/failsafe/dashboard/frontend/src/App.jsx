@@ -1,30 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './styles.css';
-import useWebSocket from './hooks/useWebSocket.js';
+import useEventStream from './hooks/useEventStream.js';
+import Overview from './components/Overview.jsx';
 import AgentGraph from './components/AgentGraph.jsx';
 import ValidationStream from './components/ValidationStream.jsx';
 import InteractionLog from './components/InteractionLog.jsx';
 import ContractCoverage from './components/ContractCoverage.jsx';
 import ContractDetail from './components/ContractDetail.jsx';
 import ViolationDetail from './components/ViolationDetail.jsx';
+import { IconGrid, IconNodes, IconActivity, IconClock, IconShield, IconFile } from './components/Icons.jsx';
 
 const NAV_ITEMS = [
-  { id: 'graph',      label: 'Agent Graph',       icon: '\u29BF' },
-  { id: 'stream',     label: 'Live Stream',        icon: '\u25C9' },
-  { id: 'log',        label: 'Interaction Log',    icon: '\u2630' },
-  { id: 'coverage',   label: 'Contract Coverage',  icon: '\u25A6' },
-  { id: 'contracts',  label: 'Contracts',          icon: '\u2702' },
+  { id: 'overview',   label: 'Overview',       Icon: IconGrid },
+  { id: 'graph',      label: 'System Map',     Icon: IconNodes },
+  { id: 'stream',     label: 'Live Activity',  Icon: IconActivity },
+  { id: 'log',        label: 'History',         Icon: IconClock },
+  { id: 'coverage',   label: 'Coverage',        Icon: IconShield },
+  { id: 'contracts',  label: 'Contracts',       Icon: IconFile },
 ];
 
-function getWsUrl() {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${proto}//${window.location.host}/ws`;
+function getStreamUrl() {
+  return `${window.location.origin}/api/stream`;
 }
 
 export default function App() {
-  const [page, setPage] = useState('graph');
-  const [detail, setDetail] = useState(null); // {type: 'contract'|'violation', data}
-  const { events, connected, clearEvents } = useWebSocket(getWsUrl());
+  const [page, setPage] = useState('overview');
+  const [detail, setDetail] = useState(null);
+  const { events, connected, clearEvents } = useEventStream(getStreamUrl());
 
   // ---- API fetchers ----
   const [agents, setAgents] = useState([]);
@@ -58,7 +60,12 @@ export default function App() {
     return () => clearInterval(interval);
   }, [fetchAll]);
 
-  // Navigation handlers that support detail views
+  // Failure count for nav badge
+  const recentFailureCount = useMemo(() => {
+    return events.filter(e => e.type === 'validation' && !(e.data?.passed ?? e.passed)).length;
+  }, [events]);
+
+  // Navigation handlers
   const openContract = useCallback((contract) => {
     setDetail({ type: 'contract', data: contract });
   }, []);
@@ -69,6 +76,11 @@ export default function App() {
 
   const closeDetail = useCallback(() => {
     setDetail(null);
+  }, []);
+
+  const navigateTo = useCallback((pageId) => {
+    setDetail(null);
+    setPage(pageId);
   }, []);
 
   // ---- Render current page ----
@@ -83,12 +95,26 @@ export default function App() {
     }
 
     switch (page) {
+      case 'overview':
+        return (
+          <Overview
+            agents={agents}
+            validations={validations}
+            events={events}
+            coverage={coverage}
+            contracts={contracts}
+            connected={connected}
+            onNavigate={navigateTo}
+            onViolationClick={openViolation}
+            onContractClick={openContract}
+          />
+        );
       case 'graph':
         return (
           <AgentGraph
             graphData={graphData}
             events={events}
-            onNodeClick={(agent) => {/* future: agent detail */}}
+            onNodeClick={() => {}}
           />
         );
       case 'stream':
@@ -121,12 +147,13 @@ export default function App() {
           <div>
             <div className="page-header">
               <h2>Contracts</h2>
-              <p>All registered handoff contracts</p>
+              <p>Rules governing data passed between agents</p>
             </div>
             {contracts.length === 0 ? (
               <div className="empty-state">
-                <div className="icon">{'\u2702'}</div>
-                <p>No contracts registered yet.</p>
+                <div className="empty-state-icon"><IconFile size={36} /></div>
+                <p className="empty-state-title">No contracts yet</p>
+                <p className="empty-state-desc">Contracts define validation rules for agent handoffs. Register your first contract to start monitoring.</p>
               </div>
             ) : (
               <div className="card">
@@ -175,7 +202,6 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* Sidebar */}
       <nav className="sidebar">
         <div className="sidebar-brand">
           <h1>FailSafe AI</h1>
@@ -186,25 +212,30 @@ export default function App() {
             <button
               key={item.id}
               className={page === item.id && !detail ? 'active' : ''}
-              onClick={() => { setDetail(null); setPage(item.id); }}
+              onClick={() => navigateTo(item.id)}
             >
-              <span className="icon">{item.icon}</span>
+              <span className="nav-icon"><item.Icon size={16} /></span>
               {item.label}
+              {item.id === 'stream' && recentFailureCount > 0 && (
+                <span className="nav-badge">{recentFailureCount > 99 ? '99+' : recentFailureCount}</span>
+              )}
             </button>
           ))}
         </div>
         <div className="sidebar-footer">
           <div className="ws-status">
             <span className={`ws-dot ${connected ? 'connected' : 'disconnected'}`} />
-            {connected ? 'WebSocket connected' : 'Disconnected'}
+            {connected
+              ? (recentFailureCount === 0 ? 'All systems healthy' : `${recentFailureCount} issue${recentFailureCount !== 1 ? 's' : ''} detected`)
+              : 'Reconnecting...'
+            }
           </div>
-          <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
-            {events.length} events | {agents.length} agents
+          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+            {agents.length} agents {' \u00b7 '} {contracts.length} contracts
           </div>
         </div>
       </nav>
 
-      {/* Main */}
       <main className="main-content">
         {renderPage()}
       </main>

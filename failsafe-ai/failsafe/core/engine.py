@@ -22,7 +22,7 @@ from failsafe.core.models import (
 from failsafe.core.policy import PolicyEngine, PolicyPack
 from failsafe.core.registry import AgentRegistry
 from failsafe.core.validator import DeterministicValidator
-from failsafe.dashboard.ws import EventBus
+from failsafe.dashboard.events import EventBus
 
 
 class FailSafe:

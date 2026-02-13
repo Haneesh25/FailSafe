@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { IconChevronLeft } from './Icons.jsx';
 
 /**
  * Full contract schema viewer showing rules, NL rules, mode, and metadata.
@@ -13,11 +14,12 @@ export default function ContractDetail({ contract, onBack }) {
   }
 
   const c = contract;
+  const [showJson, setShowJson] = useState(false);
 
   return (
     <div>
       <button className="back-link" onClick={onBack}>
-        {'\u2190'} Back
+        <IconChevronLeft size={14} /> Back to previous view
       </button>
 
       <div className="page-header">
@@ -90,12 +92,16 @@ export default function ContractDetail({ contract, onBack }) {
           </div>
         )}
 
-        {/* Raw JSON */}
+        {/* Raw JSON — collapsed by default */}
         <div className="detail-section">
-          <h4>Full Contract JSON</h4>
-          <div className="code-block">
-            {JSON.stringify(c, null, 2)}
-          </div>
+          <button className="json-toggle" onClick={() => setShowJson(!showJson)}>
+            {showJson ? 'Hide raw JSON' : 'Show raw JSON'}
+          </button>
+          {showJson && (
+            <div className="code-block" style={{ marginTop: 8 }}>
+              {JSON.stringify(c, null, 2)}
+            </div>
+          )}
         </div>
       </div>
     </div>

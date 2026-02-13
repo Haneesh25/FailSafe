@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { IconChevronLeft, IconAlert, IconCheckCircle } from './Icons.jsx';
 
 /**
  * Deep provenance view for a specific violation.
@@ -40,26 +41,26 @@ export default function ViolationDetail({ validationId, onBack }) {
   return (
     <div>
       <button className="back-link" onClick={onBack}>
-        {'\u2190'} Back
+        <IconChevronLeft size={14} /> Back to previous view
       </button>
 
       <div className="page-header">
         <h2>Violation Details</h2>
-        <p>Validation ID: {validationId}</p>
+        <p>Full provenance and evidence for validation #{validationId?.substring(0, 8)}</p>
       </div>
 
       {loading && (
         <div className="empty-state">
-          <p>Loading violation details...</p>
+          <div className="empty-state-icon"><IconAlert size={36} /></div>
+          <p className="empty-state-title">Loading details...</p>
         </div>
       )}
 
       {error && (
         <div className="detail-panel" style={{ borderColor: 'var(--red)' }}>
-          <p style={{ color: 'var(--red)' }}>Error loading violations: {error}</p>
+          <p style={{ color: 'var(--red)' }}>Could not load violation details: {error}</p>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-            The validation ID may refer to a trace_id from the WebSocket stream.
-            Violation details are only available for audit-logged validations.
+            This ID may not have been audit-logged yet. Try checking the History page for more details.
           </p>
         </div>
       )}
@@ -68,9 +69,10 @@ export default function ViolationDetail({ validationId, onBack }) {
         <>
           {violations.length === 0 ? (
             <div className="detail-panel">
-              <p style={{ color: 'var(--text-muted)' }}>
-                No violations found for this validation. It may have passed or the ID may be invalid.
-              </p>
+              <div className="empty-state-inline">
+                <IconCheckCircle size={20} />
+                <span>No violations found — this validation may have passed successfully.</span>
+              </div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

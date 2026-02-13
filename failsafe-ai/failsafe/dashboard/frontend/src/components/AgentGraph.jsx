@@ -10,6 +10,20 @@ import {
   MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { IconNodes } from './Icons.jsx';
+
+const THEME = {
+  edgeInactive: '#cbd5e1',
+  edgePass: '#16a34a',
+  edgeFail: '#dc2626',
+  edgeMixed: '#ca8a04',
+  labelText: '#64748b',
+  labelBg: '#ffffff',
+  canvasBg: '#f1f3f9',
+  gridDots: '#e2e8f0',
+  controlsBg: '#ffffff',
+  controlsBorder: '#e2e8f0',
+};
 
 /**
  * Custom node component for agents.
@@ -80,10 +94,10 @@ function deriveEdgeStatuses(events) {
 function getEdgeColor(edgeStats, source, target) {
   const key = `${source}->${target}`;
   const stats = edgeStats[key];
-  if (!stats) return '#475569'; // gray, no activity
-  if (stats.fail === 0) return '#22c55e'; // green, all passing
-  if (stats.pass === 0) return '#ef4444'; // red, all failing
-  return '#eab308'; // yellow, mixed
+  if (!stats) return THEME.edgeInactive;
+  if (stats.fail === 0) return THEME.edgePass;
+  if (stats.pass === 0) return THEME.edgeFail;
+  return THEME.edgeMixed;
 }
 
 /**
@@ -134,8 +148,8 @@ export default function AgentGraph({ graphData, events, onNodeClick }) {
         label: e.label || '',
         animated: true,
         style: { stroke: color, strokeWidth: 2 },
-        labelStyle: { fill: '#94a3b8', fontSize: 11 },
-        labelBgStyle: { fill: '#1a1f2e', fillOpacity: 0.9 },
+        labelStyle: { fill: THEME.labelText, fontSize: 11 },
+        labelBgStyle: { fill: THEME.labelBg, fillOpacity: 0.9 },
         labelBgPadding: [6, 3],
         labelBgBorderRadius: 3,
         markerEnd: { type: MarkerType.ArrowClosed, color },
@@ -157,15 +171,16 @@ export default function AgentGraph({ graphData, events, onNodeClick }) {
   return (
     <div>
       <div className="page-header">
-        <h2>Agent Dependency Graph</h2>
-        <p>Live view of agents and handoff connections. Color reflects recent validation health.</p>
+        <h2>System Map</h2>
+        <p>Live view of your agents and how they connect. Color reflects recent health.</p>
       </div>
       <div className="card">
         <div className="graph-container">
           {initialNodes.length === 0 ? (
             <div className="empty-state" style={{ paddingTop: 120 }}>
-              <div className="icon">{'\u29BF'}</div>
-              <p>No agents registered yet. Start FailSafe with agents and contracts to see the graph.</p>
+              <div className="empty-state-icon"><IconNodes size={36} /></div>
+              <p className="empty-state-title">No agents registered</p>
+              <p className="empty-state-desc">Start FailSafe with agents and contracts to see them mapped here.</p>
             </div>
           ) : (
             <ReactFlow
@@ -178,11 +193,11 @@ export default function AgentGraph({ graphData, events, onNodeClick }) {
               fitView
               fitViewOptions={{ padding: 0.3 }}
               proOptions={{ hideAttribution: true }}
-              style={{ background: '#111827' }}
+              style={{ background: THEME.canvasBg }}
             >
-              <Background color="#1e293b" gap={20} />
+              <Background color={THEME.gridDots} gap={20} />
               <Controls
-                style={{ background: '#1a1f2e', borderColor: '#334155' }}
+                style={{ background: THEME.controlsBg, borderColor: THEME.controlsBorder }}
               />
             </ReactFlow>
           )}
@@ -191,13 +206,13 @@ export default function AgentGraph({ graphData, events, onNodeClick }) {
 
       {/* Legend */}
       <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-        <span><span style={{ color: '#22c55e' }}>{'\u25CF'}</span> Healthy</span>
-        <span><span style={{ color: '#eab308' }}>{'\u25CF'}</span> Warnings</span>
-        <span><span style={{ color: '#ef4444' }}>{'\u25CF'}</span> Errors</span>
+        <span><span style={{ color: THEME.edgePass }}>{'\u25CF'}</span> Healthy</span>
+        <span><span style={{ color: THEME.edgeMixed }}>{'\u25CF'}</span> Warnings</span>
+        <span><span style={{ color: THEME.edgeFail }}>{'\u25CF'}</span> Errors</span>
         <span style={{ marginLeft: 'auto' }}>
-          Edges: <span style={{ color: '#22c55e' }}>green</span>=passing,{' '}
-          <span style={{ color: '#eab308' }}>yellow</span>=mixed,{' '}
-          <span style={{ color: '#ef4444' }}>red</span>=failing
+          Edges: <span style={{ color: THEME.edgePass }}>green</span>=passing,{' '}
+          <span style={{ color: THEME.edgeMixed }}>yellow</span>=mixed,{' '}
+          <span style={{ color: THEME.edgeFail }}>red</span>=failing
         </span>
       </div>
     </div>

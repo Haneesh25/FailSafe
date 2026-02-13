@@ -1,14 +1,16 @@
-"""FastAPI backend — serves dashboard + WebSocket endpoint."""
+"""FastAPI backend — serves dashboard + SSE stream endpoint."""
 
 from __future__ import annotations
 
-import os
+import asyncio
+import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sse_starlette.sse import EventSourceResponse
 
 if TYPE_CHECKING:
     from failsafe.core.engine import FailSafe
@@ -19,16 +21,32 @@ FRONTEND_DIST_DIR = Path(__file__).parent / "frontend" / "dist"
 def create_app(fs: "FailSafe") -> FastAPI:
     app = FastAPI(title="FailSafe Dashboard")
 
-    # --- WebSocket ---
+    # --- SSE Stream ---
 
-    @app.websocket("/ws")
-    async def websocket_endpoint(websocket: WebSocket):
-        await fs.event_bus.connect(websocket)
-        try:
-            while True:
-                await websocket.receive_text()
-        except WebSocketDisconnect:
-            fs.event_bus.disconnect(websocket)
+    @app.get("/api/stream")
+    async def sse_stream(request: Request):
+        queue = fs.event_bus.subscribe()
+
+        async def event_generator():
+            # Send recent history first
+            for event in fs.event_bus.history:
+                yield {"data": json.dumps(event)}
+
+            # Then stream live events
+            try:
+                while True:
+                    if await request.is_disconnected():
+                        break
+                    try:
+                        event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                        yield {"data": json.dumps(event)}
+                    except asyncio.TimeoutError:
+                        # Send keepalive comment
+                        yield {"comment": "keepalive"}
+            finally:
+                fs.event_bus.unsubscribe(queue)
+
+        return EventSourceResponse(event_generator())
 
     # --- REST API ---
 

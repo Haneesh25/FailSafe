@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { IconActivity, IconCheckCircle } from './Icons.jsx';
 
 /**
- * Real-time feed of validation events from the WebSocket.
+ * Real-time feed of validation events streamed via SSE.
  * Auto-scrolls to bottom, with a pause button. Failed events highlighted.
  */
 export default function ValidationStream({ events, onClear, onViolationClick }) {
   const [paused, setPaused] = useState(false);
-  const [filter, setFilter] = useState('all'); // 'all' | 'failed' | 'passed'
+  const [filter, setFilter] = useState('failed'); // 'all' | 'failed' | 'passed'
   const bottomRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -40,13 +41,13 @@ export default function ValidationStream({ events, onClear, onViolationClick }) 
   return (
     <div>
       <div className="page-header">
-        <h2>Live Validation Stream</h2>
-        <p>Real-time feed of handoff validations from the WebSocket</p>
+        <h2>Live Activity</h2>
+        <p>Real-time validation events as they happen</p>
       </div>
 
       <div className="card">
         <div className="card-header">
-          <h3>Events ({filtered.length})</h3>
+          <h3>{filter === 'failed' ? `${filtered.length} failure${filtered.length !== 1 ? 's' : ''}` : `${filtered.length} event${filtered.length !== 1 ? 's' : ''}`}</h3>
           <div className="stream-controls">
             <button
               className={`btn ${filter === 'all' ? 'active' : ''}`}
@@ -79,7 +80,19 @@ export default function ValidationStream({ events, onClear, onViolationClick }) 
         <div className="stream-container" ref={containerRef}>
           {filtered.length === 0 && (
             <div className="empty-state">
-              <p>No events yet. Waiting for validations...</p>
+              {filter === 'failed' ? (
+                <>
+                  <div className="empty-state-icon"><IconCheckCircle size={36} /></div>
+                  <p className="empty-state-title">No failures detected</p>
+                  <p className="empty-state-desc">All validations are passing. Switch to "All" to see all events.</p>
+                </>
+              ) : (
+                <>
+                  <div className="empty-state-icon"><IconActivity size={36} /></div>
+                  <p className="empty-state-title">Waiting for events</p>
+                  <p className="empty-state-desc">Events will appear here as agents communicate. Make sure FailSafe is running.</p>
+                </>
+              )}
             </div>
           )}
           {filtered.map((evt, i) => {
