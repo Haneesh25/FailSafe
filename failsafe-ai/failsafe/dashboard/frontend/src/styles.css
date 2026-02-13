@@ -979,7 +979,7 @@ tbody tr.severity-high:hover {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: linear-gradient(180deg, #ebebeb 0%, #d8d8d8 100%);
+  background: #e8e8e8;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   cursor: grab;
   user-select: none;
