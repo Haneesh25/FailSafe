@@ -114,7 +114,7 @@ export default function App() {
           <AgentGraph
             graphData={graphData}
             events={events}
-            onNodeClick={() => {}}
+            onContractClick={openContract}
           />
         );
       case 'stream':

@@ -48,6 +48,13 @@ async def main():
         require=["trade_id", "amount"],
     )
 
+    fs.contract(
+        name="trading-to-compliance",
+        source="onboarding_agent",
+        target="compliance_agent",
+        allow=["trade_id", "amount", "instrument", "account_id", "human_approved"],
+        require=["trade_id", "amount"],
+    )
     print("Dashboard running at http://localhost:8765")
     print("Sending validation events every 2 seconds... (Ctrl+C to stop)\n")
 
