@@ -4,11 +4,11 @@ This file provides guidance to Claude Code when working in the BrowserScale mono
 
 ## Repository Overview
 
-BrowserScale is a monorepo containing multiple projects focused on AI agent testing, validation, and infrastructure.
+BrowserScale is a monorepo with two contributors containing multiple projects focused on AI agent testing, validation, and infrastructure.
 
 ## Projects
 
-### `agent-readiness-lab/` — Agent Testing Sandbox (Andy)
+### `agent-readiness-lab/` — Agent Testing Sandbox
 
 Test AI agents safely before production by replaying realistic user interaction traces in a sandboxed web environment and scoring their helpfulness + safety.
 
@@ -17,7 +17,7 @@ Test AI agents safely before production by replaying realistic user interaction 
 - **Key concepts**: JSONL traces, constrained tool API (no shell), deterministic mutations, StubAgent vs ExternalAgent
 - **See**: `agent-readiness-lab/CLAUDE.md` for detailed build/run/architecture docs
 
-### `failsafe-pip-package/` — Contract Validation Framework (Andy)
+### `failsafe-pip-package/` — Contract Validation Framework
 
 Contract testing and compliance validation for multi-agent AI systems. Validates agent outputs against contracts and policies using deterministic checks and LLM-based judgment.
 
