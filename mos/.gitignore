@@ -1,8 +1,0 @@
-__pycache__/
-*.pyc
-*.egg-info/
-dist/
-build/
-*.db
-compliance_report.json
-contracts.json
