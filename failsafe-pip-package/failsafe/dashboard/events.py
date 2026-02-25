@@ -14,7 +14,7 @@ class EventBus:
     def __init__(self) -> None:
         self._subscribers: list[asyncio.Queue[dict[str, Any]]] = []
         self._history: list[dict[str, Any]] = []
-        self._max_history = 1000
+        self._max_history = 5000
 
     def subscribe(self) -> asyncio.Queue[dict[str, Any]]:
         """Create a new subscriber queue and return it."""
@@ -29,8 +29,8 @@ class EventBus:
 
     @property
     def history(self) -> list[dict[str, Any]]:
-        """Return recent event history (last 50)."""
-        return self._history[-50:]
+        """Return recent event history."""
+        return self._history[-200:]
 
     async def emit(self, event_type: str, data: Any) -> None:
         """Broadcast an event to all SSE subscribers."""

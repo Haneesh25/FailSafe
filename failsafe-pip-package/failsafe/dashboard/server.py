@@ -86,6 +86,34 @@ def create_app(fs: "FailSafe") -> FastAPI:
     async def get_violations(validation_id: int):
         return await fs.audit_log.get_violations(validation_id)
 
+    @app.get("/api/handoffs/recent")
+    async def get_recent_handoffs(limit: int = 50):
+        """Get recent handoffs with payload data from event bus history."""
+        events = fs.event_bus.history[-limit:]
+        return [
+            {
+                "source": e["data"].get("source"),
+                "target": e["data"].get("target"),
+                "passed": e["data"].get("passed"),
+                "payload": e["data"].get("payload"),
+                "payload_preview": e["data"].get("payload_preview"),
+                "payload_keys": e["data"].get("payload_keys"),
+                "violations": e["data"].get("violations", []),
+                "timestamp": e["data"].get("timestamp"),
+                "trace_id": e["data"].get("trace_id"),
+            }
+            for e in events
+            if e.get("type") == "validation"
+        ]
+
+    @app.get("/api/handoffs/{trace_id}")
+    async def get_handoff_detail(trace_id: str):
+        """Get full handoff details for a specific trace ID."""
+        for e in reversed(fs.event_bus._history):
+            if e.get("type") == "validation" and e["data"].get("trace_id") == trace_id:
+                return e["data"]
+        return {"error": "Not found"}
+
     @app.get("/api/graph")
     async def get_graph():
         agents = fs.registry.list_all()
@@ -107,7 +135,7 @@ def create_app(fs: "FailSafe") -> FastAPI:
 
     # --- Static files (React frontend) ---
 
-    if FRONTEND_DIST_DIR.exists():
+    if FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "assets").exists():
         app.mount(
             "/assets",
             StaticFiles(directory=FRONTEND_DIST_DIR / "assets"),

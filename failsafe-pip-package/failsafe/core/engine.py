@@ -264,10 +264,24 @@ class FailSafe:
                 "trace_id": handoff_payload.trace_id,
                 "timestamp": handoff_payload.timestamp.isoformat(),
                 "duration_ms": result.duration_ms,
+                "payload_keys": list(payload.keys()),
+                "payload_size": len(str(payload)),
+                "payload_preview": self._payload_preview(payload),
+                "payload": self._mask_sensitive(payload),
             },
         )
 
         return result
+
+    def trace(
+        self,
+        source: str,
+        target: str,
+        payload: dict[str, Any],
+        **kwargs: Any,
+    ) -> ValidationResult:
+        """Convenience alias for handoff_sync() — logs a handoff, validates if contracts exist."""
+        return self.handoff_sync(source, target, payload, **kwargs)
 
     def handoff_sync(
         self,
@@ -292,6 +306,54 @@ class FailSafe:
                 )
                 return future.result()
         return asyncio.run(self.handoff(source, target, payload, **kwargs))
+
+    def _payload_preview(self, payload: dict, max_length: int = 200) -> str:
+        """Create a short string preview of the payload for display."""
+        import json
+
+        text = json.dumps(payload, default=str)
+        if len(text) > max_length:
+            return text[:max_length] + "..."
+        return text
+
+    def _mask_sensitive(self, payload: dict) -> dict:
+        """Deep-copy payload with sensitive-looking values masked.
+
+        Masks values for keys matching common sensitive patterns.
+        Also masks string values that match SSN/credit card regex patterns.
+        Keeps structure and key names visible — only masks the VALUES.
+        """
+        import re
+
+        sensitive_key_patterns = {
+            "ssn", "social_security", "password", "passwd", "secret",
+            "token", "api_key", "apikey", "credit_card", "card_number",
+            "account_number", "bank_account", "tax_id", "private_key",
+            "access_key", "secret_key",
+        }
+
+        ssn_re = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+        cc_re = re.compile(r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b")
+
+        def _mask(data: Any) -> Any:
+            if isinstance(data, dict):
+                result = {}
+                for k, v in data.items():
+                    key_lower = k.lower().replace("-", "_")
+                    if key_lower in sensitive_key_patterns:
+                        result[k] = "***MASKED***"
+                    else:
+                        result[k] = _mask(v)
+                return result
+            elif isinstance(data, list):
+                return [_mask(item) for item in data]
+            elif isinstance(data, str):
+                masked = ssn_re.sub("***-**-****", data)
+                masked = cc_re.sub("****-****-****-****", masked)
+                return masked
+            return data
+
+        return _mask(payload)
 
     def _sanitize(
         self, data: dict[str, Any], violations: list[Violation]

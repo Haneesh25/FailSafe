@@ -39,6 +39,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
         self.violations: list[Violation] = []
         self.audit_log: list[dict[str, Any]] = []
         self._chain_stack: list[str] = []
+        self._chain_inputs: dict[str, dict] = {}
         self._trace_id = str(uuid4())
 
     async def on_chain_start(
@@ -49,6 +50,8 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
     ) -> None:
         chain_name = serialized.get("name", serialized.get("id", ["unknown"])[-1])
         self._chain_stack.append(chain_name)
+        if isinstance(inputs, dict):
+            self._chain_inputs[chain_name] = inputs
         self.audit_log.append(
             {
                 "event": "chain_start",
@@ -80,6 +83,17 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
             )
             self.violations.extend(result.violations)
 
+            self.audit_log.append({
+                "event": "handoff",
+                "source": source,
+                "target": target,
+                "passed": result.passed,
+                "violation_count": len(result.violations),
+                "payload_keys": list(payload.keys()),
+                "timestamp": datetime.utcnow().isoformat(),
+                "trace_id": self._trace_id,
+            })
+
         self.audit_log.append(
             {
                 "event": "chain_end",
@@ -89,6 +103,9 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "trace_id": self._trace_id,
             }
         )
+
+        # Clean up stored inputs
+        self._chain_inputs.pop(chain_name, None)
 
     async def on_tool_start(
         self,
@@ -130,6 +147,42 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
             }
         )
 
+    async def on_llm_start(
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
+    ) -> None:
+        agent_name = self._chain_stack[-1] if self._chain_stack else "unknown"
+        model = serialized.get("kwargs", {}).get(
+            "model_name", serialized.get("id", ["unknown"])[-1]
+        )
+        self.audit_log.append(
+            {
+                "event": "llm_start",
+                "agent": agent_name,
+                "model": model,
+                "prompt_count": len(prompts) if isinstance(prompts, list) else 1,
+                "timestamp": datetime.utcnow().isoformat(),
+                "trace_id": self._trace_id,
+            }
+        )
+
+    async def on_llm_end(self, response: Any, **kwargs: Any) -> None:
+        agent_name = self._chain_stack[-1] if self._chain_stack else "unknown"
+        token_usage = {}
+        if hasattr(response, "llm_output") and response.llm_output:
+            token_usage = response.llm_output.get("token_usage", {})
+        self.audit_log.append(
+            {
+                "event": "llm_end",
+                "agent": agent_name,
+                "token_usage": token_usage,
+                "timestamp": datetime.utcnow().isoformat(),
+                "trace_id": self._trace_id,
+            }
+        )
+
     async def on_agent_action(self, action: Any, **kwargs: Any) -> None:
         agent_name = self._chain_stack[-1] if self._chain_stack else "unknown"
         tool = getattr(action, "tool", "unknown")
@@ -143,3 +196,29 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "trace_id": self._trace_id,
             }
         )
+
+    def summary(self) -> dict:
+        """Return a summary of what was observed."""
+        return {
+            "trace_id": self._trace_id,
+            "total_events": len(self.audit_log),
+            "chains_seen": list(set(
+                e["chain"] for e in self.audit_log if "chain" in e
+            )),
+            "tools_called": list(set(
+                e["tool"] for e in self.audit_log if e.get("event") == "tool_start"
+            )),
+            "handoffs": [
+                e for e in self.audit_log if e.get("event") == "handoff"
+            ],
+            "violations": [
+                {"rule": v.rule, "severity": v.severity, "message": v.message}
+                for v in self.violations
+            ],
+            "total_violations": len(self.violations),
+        }
+
+    def __repr__(self) -> str:
+        v = len(self.violations)
+        e = len(self.audit_log)
+        return f"<FailSafeCallbackHandler trace={self._trace_id[:8]}... events={e} violations={v}>"

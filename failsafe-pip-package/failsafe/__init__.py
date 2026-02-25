@@ -3,9 +3,12 @@
 from failsafe.core.engine import FailSafe
 from failsafe.core.models import AgentCard, Contract, ValidationResult, Violation
 from failsafe.core.policy import Policy, PolicyPack
+from failsafe.observe import FailSafeObserver, observe
 
 __all__ = [
     "FailSafe",
+    "observe",
+    "FailSafeObserver",
     "Contract",
     "AgentCard",
     "ValidationResult",
