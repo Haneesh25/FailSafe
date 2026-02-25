@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from typing import Any, Literal
 from uuid import uuid4
@@ -204,7 +204,7 @@ class FailSafe:
             source=source,
             target=target,
             data=payload,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             trace_id=trace_id or str(uuid4()),
             metadata=metadata or {},
         )

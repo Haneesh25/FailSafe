@@ -4,7 +4,7 @@ import asyncio
 import os
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -70,7 +70,7 @@ async def _run_evaluation_async(job_data: dict) -> dict:
         return {"error": "Run not found"}
 
     run.status = RunStatus.RUNNING
-    run.started_at = datetime.utcnow()
+    run.started_at = datetime.now(timezone.utc)
     db.commit()
 
     # Get traces
@@ -122,7 +122,7 @@ async def _run_evaluation_async(job_data: dict) -> dict:
                         status=RunStatus.RUNNING,
                         was_mutated=bool(mutator),
                         mutation_summary=mutation_summary,
-                        started_at=datetime.utcnow(),
+                        started_at=datetime.now(timezone.utc),
                     )
                     db.add(session_record)
                     db.commit()
@@ -174,7 +174,7 @@ async def _run_evaluation_async(job_data: dict) -> dict:
                     session_record.recovery_count = sum(
                         1 for e in events if e.get("result") == "success" and e.get("step_index", 0) > 0
                     )
-                    session_record.completed_at = datetime.utcnow()
+                    session_record.completed_at = datetime.now(timezone.utc)
 
                     db.commit()
 
@@ -197,7 +197,7 @@ async def _run_evaluation_async(job_data: dict) -> dict:
 
         # Update run with final metrics
         run.status = RunStatus.COMPLETED
-        run.completed_at = datetime.utcnow()
+        run.completed_at = datetime.now(timezone.utc)
         run.success_rate = metrics.success_rate
         run.median_time_to_complete = metrics.median_time_to_complete
         run.error_recovery_rate = metrics.error_recovery_rate
@@ -216,7 +216,7 @@ async def _run_evaluation_async(job_data: dict) -> dict:
     except Exception as e:
         run.status = RunStatus.FAILED
         run.error_message = str(e)
-        run.completed_at = datetime.utcnow()
+        run.completed_at = datetime.now(timezone.utc)
         db.commit()
 
         return {

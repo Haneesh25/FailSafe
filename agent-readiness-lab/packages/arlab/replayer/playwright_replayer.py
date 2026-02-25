@@ -4,7 +4,7 @@ import asyncio
 import os
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -84,7 +84,7 @@ class PlaywrightReplayer:
 
         events: list[dict] = []
         screenshots: list[str] = []
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         steps_completed = 0
         error_message: str | None = None
         success = True
@@ -96,7 +96,7 @@ class PlaywrightReplayer:
             await self._page.wait_for_load_state("networkidle")
 
             for i, step in enumerate(session.steps):
-                step_start = datetime.utcnow()
+                step_start = datetime.now(timezone.utc)
 
                 # Handle timing (relative delay)
                 if i > 0:
@@ -112,7 +112,7 @@ class PlaywrightReplayer:
                     "url": step.url,
                     "result": "pending",
                     "error": None,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
 
                 try:
@@ -135,7 +135,7 @@ class PlaywrightReplayer:
                     else:
                         success = False
 
-                event["duration_ms"] = (datetime.utcnow() - step_start).total_seconds() * 1000
+                event["duration_ms"] = (datetime.now(timezone.utc) - step_start).total_seconds() * 1000
                 events.append(event)
 
                 # Check expectations if defined
@@ -149,7 +149,7 @@ class PlaywrightReplayer:
             error_message = str(e)
             success = False
 
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         duration_ms = (end_time - start_time).total_seconds() * 1000
 
         return ReplayResult(

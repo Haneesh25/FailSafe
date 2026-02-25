@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -57,7 +57,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "event": "chain_start",
                 "chain": chain_name,
                 "inputs_keys": list(inputs.keys()) if isinstance(inputs, dict) else [],
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )
@@ -90,7 +90,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "passed": result.passed,
                 "violation_count": len(result.violations),
                 "payload_keys": list(payload.keys()),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             })
 
@@ -99,7 +99,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "event": "chain_end",
                 "chain": chain_name,
                 "output_keys": list(outputs.keys()) if isinstance(outputs, dict) else [],
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )
@@ -121,7 +121,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "event": "tool_start",
                 "tool": tool_name,
                 "agent": agent_name,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )
@@ -142,7 +142,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
         self.audit_log.append(
             {
                 "event": "tool_end",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )
@@ -163,7 +163,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "agent": agent_name,
                 "model": model,
                 "prompt_count": len(prompts) if isinstance(prompts, list) else 1,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )
@@ -178,7 +178,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "event": "llm_end",
                 "agent": agent_name,
                 "token_usage": token_usage,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )
@@ -192,7 +192,7 @@ class FailSafeCallbackHandler(AsyncCallbackHandler):
                 "event": "agent_action",
                 "agent": agent_name,
                 "tool": tool,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "trace_id": self._trace_id,
             }
         )

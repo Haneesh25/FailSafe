@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Protocol
 
 from ..traces.schema import Observation, AgentAction, ActionType
@@ -89,7 +89,7 @@ class AgentHarness:
 
         success = False
         error_message = None
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         try:
             for step in range(self.max_steps):
@@ -101,7 +101,7 @@ class AgentHarness:
                 # Record observation
                 event = {
                     "step": step,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "observation": observation.model_dump() if observation else None,
                     "action": None,
                     "result": None,
@@ -147,7 +147,7 @@ class AgentHarness:
         except Exception as e:
             error_message = str(e)
 
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         duration_ms = (end_time - start_time).total_seconds() * 1000
 
         return {

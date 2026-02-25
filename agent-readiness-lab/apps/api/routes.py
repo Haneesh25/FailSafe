@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
@@ -83,7 +83,7 @@ async def ingest_trace(
         existing.goal = session.goal
         existing.step_count = len(session.steps)
         existing.tags = session.tags
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = datetime.now(timezone.utc)
         db.commit()
         return {"status": "updated", "session_id": session.session_id}
 
