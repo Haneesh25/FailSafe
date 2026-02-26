@@ -291,6 +291,8 @@ function buildGraph(graphNodes, graphEdges, agentStatuses, edgeStats) {
     const color = getEdgeColor(edgeStats, e.source, e.target);
     const edgeStyle = { stroke: color, strokeWidth: 2 };
     const marker = { type: MarkerType.ArrowClosed, color };
+    const stats = edgeStats[`${e.source}->${e.target}`];
+    const edgeLabel = stats ? `${stats.pass + stats.fail} handoffs, ${stats.fail} failures` : '';
 
     edges.push({
       id: `${e.source}__to__${contractId}`,
@@ -299,6 +301,11 @@ function buildGraph(graphNodes, graphEdges, agentStatuses, edgeStats) {
       animated: true,
       style: edgeStyle,
       markerEnd: marker,
+      label: edgeLabel,
+      labelStyle: { fontSize: 10, fill: THEME.labelText },
+      labelBgStyle: { fill: THEME.labelBg, fillOpacity: 0.85 },
+      labelBgPadding: [4, 2],
+      labelBgBorderRadius: 3,
     });
 
     edges.push({
@@ -318,10 +325,139 @@ function buildGraph(graphNodes, graphEdges, agentStatuses, edgeStats) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Edge Payload Panel                                                 */
+/* ------------------------------------------------------------------ */
+
+function EdgePayloadPanel({ source, target, contract, events, onClose, onContractClick, onHandoffClick }) {
+  const edgeEvents = useMemo(() => {
+    return events.filter(
+      (e) => e.type === 'validation' && e.data?.source === source && e.data?.target === target
+    );
+  }, [events, source, target]);
+
+  const recentEvents = edgeEvents.slice(-20).reverse();
+
+  const stats = useMemo(() => {
+    const total = edgeEvents.length;
+    const passed = edgeEvents.filter((e) => e.data?.passed).length;
+    const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : '0.0';
+    const totalSize = edgeEvents.reduce((sum, e) => sum + (e.data?.payload_size || 0), 0);
+    const avgSize = total > 0 ? Math.round(totalSize / total) : 0;
+    return { total, passRate, avgSize };
+  }, [edgeEvents]);
+
+  const formatTime = (ts) => {
+    if (!ts) return '--:--:--';
+    try {
+      return new Date(ts).toLocaleTimeString('en-US', { hour12: false });
+    } catch {
+      return ts;
+    }
+  };
+
+  const ruleTypes = useMemo(() => {
+    if (!contract?.rules || contract.rules.length === 0) return '';
+    return contract.rules.map((r) => r.rule_type).join(', ');
+  }, [contract]);
+
+  return (
+    <div className="edge-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="edge-panel-header">
+        <div>
+          <div className="edge-panel-title">{source} {'\u2192'} {target}</div>
+          {contract && (
+            <span
+              style={{ fontSize: 12, color: 'var(--cyan)', cursor: 'pointer' }}
+              onClick={() => onContractClick && onContractClick(contract)}
+            >
+              {contract.name}
+            </span>
+          )}
+        </div>
+        <button className="edge-panel-close" onClick={onClose}>{'\u2715'}</button>
+      </div>
+
+      {contract && (
+        <div className="edge-panel-section">
+          <h4>Contract</h4>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className={`badge ${contract.mode === 'block' ? 'badge-fail' : 'badge-warn'}`}>
+              {contract.mode}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              {contract.rules?.length || 0} rules
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              {contract.nl_rules?.length || 0} NL rules
+            </span>
+          </div>
+          {ruleTypes && (
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, fontFamily: 'var(--font-mono)' }}>
+              {ruleTypes}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="edge-panel-section" style={{ padding: '8px 16px' }}>
+        <h4>Recent Payloads ({recentEvents.length})</h4>
+      </div>
+
+      <div className="edge-panel-body">
+        {recentEvents.length === 0 ? (
+          <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+            No handoffs recorded for this edge yet.
+          </div>
+        ) : (
+          recentEvents.map((evt, i) => {
+            const d = evt.data || evt;
+            const preview = d.payload_preview
+              ? (d.payload_preview.length > 60 ? d.payload_preview.substring(0, 60) + '...' : d.payload_preview)
+              : '';
+            return (
+              <div
+                key={d.trace_id || i}
+                className="edge-payload-row"
+                onClick={() => onHandoffClick && onHandoffClick(evt)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+                    {formatTime(d.timestamp || evt.timestamp)}
+                  </span>
+                  <span className={`badge ${d.passed ? 'badge-pass' : 'badge-fail'}`} style={{ fontSize: 10, padding: '1px 6px' }}>
+                    {d.passed ? 'PASS' : 'FAIL'}
+                  </span>
+                  {d.payload_keys && (
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {d.payload_keys.length} keys
+                    </span>
+                  )}
+                </div>
+                {preview && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {preview}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="edge-panel-stats">
+        <span>{stats.total} handoffs</span>
+        <span>{stats.passRate}% pass</span>
+        {stats.avgSize > 0 && <span>~{stats.avgSize}B avg</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main component                                                     */
 /* ------------------------------------------------------------------ */
 
-export default function AgentGraph({ graphData, events, onContractClick }) {
+export default function AgentGraph({ graphData, events, onContractClick, onHandoffClick }) {
   const agentStatuses = useMemo(() => deriveAgentStatuses(events), [events]);
   const edgeStats = useMemo(() => deriveEdgeStatuses(events), [events]);
 
@@ -347,14 +483,21 @@ export default function AgentGraph({ graphData, events, onContractClick }) {
 
   React.useEffect(() => { setEdges(initialEdges); }, [initialEdges, setEdges]);
 
-  // Popup state
+  // Popup & edge panel state
   const [popup, setPopup] = useState(null);
+  const [edgePanel, setEdgePanel] = useState(null);
   const graphContainerRef = useRef(null);
 
   const onNodeClickHandler = useCallback((event, node) => {
     if (node.type === 'contractNode') {
-      if (onContractClick && node.data.contract) {
-        onContractClick(node.data.contract);
+      const contractData = node.data.contract;
+      if (contractData) {
+        setEdgePanel({
+          source: contractData.source,
+          target: contractData.target,
+          contract: contractData,
+        });
+        setPopup(null);
       }
     } else if (node.type === 'agentNode') {
       const container = graphContainerRef.current;
@@ -368,10 +511,11 @@ export default function AgentGraph({ graphData, events, onContractClick }) {
         },
       });
     }
-  }, [onContractClick]);
+  }, []);
 
   const onPaneClick = useCallback(() => {
     setPopup(null);
+    setEdgePanel(null);
   }, []);
 
   return (
@@ -414,6 +558,18 @@ export default function AgentGraph({ graphData, events, onContractClick }) {
               data={popup.agentData}
               position={popup.position}
               onClose={() => setPopup(null)}
+            />
+          )}
+
+          {edgePanel && (
+            <EdgePayloadPanel
+              source={edgePanel.source}
+              target={edgePanel.target}
+              contract={edgePanel.contract}
+              events={events}
+              onClose={() => setEdgePanel(null)}
+              onContractClick={onContractClick}
+              onHandoffClick={onHandoffClick}
             />
           )}
         </div>

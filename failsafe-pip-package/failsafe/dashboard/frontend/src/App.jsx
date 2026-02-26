@@ -8,12 +8,15 @@ import InteractionLog from './components/InteractionLog.jsx';
 import ContractCoverage from './components/ContractCoverage.jsx';
 import ContractDetail from './components/ContractDetail.jsx';
 import ViolationDetail from './components/ViolationDetail.jsx';
-import { IconGrid, IconNodes, IconActivity, IconClock, IconShield, IconFile } from './components/Icons.jsx';
+import HandoffDetail from './components/HandoffDetail.jsx';
+import DataFlow from './components/DataFlow.jsx';
+import { IconGrid, IconNodes, IconActivity, IconClock, IconShield, IconFile, IconDataFlow } from './components/Icons.jsx';
 
 const NAV_ITEMS = [
   { id: 'overview',   label: 'Overview',       Icon: IconGrid },
   { id: 'graph',      label: 'System Map',     Icon: IconNodes },
   { id: 'stream',     label: 'Live Activity',  Icon: IconActivity },
+  { id: 'dataflow',   label: 'Data Flow',      Icon: IconDataFlow },
   { id: 'log',        label: 'History',         Icon: IconClock },
   { id: 'coverage',   label: 'Coverage',        Icon: IconShield },
   { id: 'contracts',  label: 'Contracts',       Icon: IconFile },
@@ -70,6 +73,10 @@ export default function App() {
     setDetail({ type: 'contract', data: contract });
   }, []);
 
+  const openHandoff = useCallback((event) => {
+    setDetail({ type: 'handoff', data: event });
+  }, []);
+
   const openViolation = useCallback((validationId) => {
     setDetail({ type: 'violation', data: validationId });
   }, []);
@@ -86,6 +93,9 @@ export default function App() {
   // ---- Render current page ----
   function renderPage() {
     if (detail) {
+      if (detail.type === 'handoff') {
+        return <HandoffDetail event={detail.data} events={events} onBack={closeDetail} onNavigate={navigateTo} />;
+      }
       if (detail.type === 'contract') {
         return <ContractDetail contract={detail.data} onBack={closeDetail} />;
       }
@@ -105,7 +115,7 @@ export default function App() {
             contracts={contracts}
             connected={connected}
             onNavigate={navigateTo}
-            onViolationClick={openViolation}
+            onHandoffClick={openHandoff}
             onContractClick={openContract}
           />
         );
@@ -115,6 +125,7 @@ export default function App() {
             graphData={graphData}
             events={events}
             onContractClick={openContract}
+            onHandoffClick={openHandoff}
           />
         );
       case 'stream':
@@ -122,14 +133,18 @@ export default function App() {
           <ValidationStream
             events={events}
             onClear={clearEvents}
-            onViolationClick={openViolation}
+            onHandoffClick={openHandoff}
           />
+        );
+      case 'dataflow':
+        return (
+          <DataFlow events={events} onHandoffClick={openHandoff} />
         );
       case 'log':
         return (
           <InteractionLog
             validations={validations}
-            onRowClick={openViolation}
+            onRowClick={openHandoff}
             onContractClick={openContract}
             contracts={contracts}
           />

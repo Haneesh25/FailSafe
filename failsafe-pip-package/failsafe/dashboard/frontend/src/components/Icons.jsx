@@ -108,3 +108,13 @@ export function IconXCircle({ size = 18 }) {
     </svg>
   );
 }
+
+export function IconDataFlow({ size = 18 }) {
+  return (
+    <svg {...d(size)}>
+      <path d="M4 12h16" />
+      <path d="M13 5l7 7-7 7" />
+      <circle cx="4" cy="12" r="2" />
+    </svg>
+  );
+}

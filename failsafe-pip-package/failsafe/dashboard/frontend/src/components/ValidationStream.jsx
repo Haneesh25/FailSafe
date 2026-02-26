@@ -81,7 +81,7 @@ const formatJson = (value, indent = 0) => {
  * Real-time feed of validation events streamed via SSE.
  * Auto-scrolls to bottom, with a pause button. Failed events highlighted.
  */
-export default function ValidationStream({ events, onClear, onViolationClick }) {
+export default function ValidationStream({ events, onClear, onHandoffClick }) {
   const [paused, setPaused] = useState(false);
   const [filter, setFilter] = useState('failed'); // 'all' | 'failed' | 'passed'
   const [expanded, setExpanded] = useState(new Set());
@@ -219,11 +219,11 @@ export default function ValidationStream({ events, onClear, onViolationClick }) 
                 key={`${d.trace_id || i}-${evt.timestamp || i}`}
                 className={`stream-event ${failed ? 'failed' : ''}`}
                 onClick={() => {
-                  if (failed && onViolationClick && d.trace_id) {
-                    onViolationClick(d.trace_id);
+                  if (onHandoffClick) {
+                    onHandoffClick(evt);
                   }
                 }}
-                style={{ cursor: failed ? 'pointer' : 'default' }}
+                style={{ cursor: 'pointer' }}
               >
                 <span className="stream-time">
                   {formatTime(d.timestamp || evt.timestamp)}

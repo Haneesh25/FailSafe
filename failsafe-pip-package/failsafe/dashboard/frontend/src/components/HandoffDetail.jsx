@@ -79,28 +79,46 @@ const formatJson = (value, indent = 0) => {
 };
 
 /**
- * Detailed view for a single handoff event.
- * Shows payload data, violations, and navigation between events.
+ * Detailed view for a single handoff event from the SSE stream.
+ * Shows header, payload (tabbed), violations, and prev/next navigation.
  */
 export default function HandoffDetail({ event, events, onBack, onNavigate }) {
   const [payloadTab, setPayloadTab] = useState('masked');
   const [expandedEvidence, setExpandedEvidence] = useState(new Set());
   const [copied, setCopied] = useState(false);
 
-  const d = event?.data || event;
-
-  // Find current event index among validation events for prev/next
   const validationEvents = useMemo(
     () => events.filter((e) => e.type === 'validation'),
     [events],
   );
 
-  const currentIndex = useMemo(() => {
-    return validationEvents.findIndex((e) => e === event);
-  }, [validationEvents, event]);
+  // Find the initial index from the event prop (only on mount)
+  const initialIndex = useMemo(() => {
+    const ed = event?.data || event;
+    if (!ed?.trace_id) return -1;
+    return validationEvents.findIndex((e) => {
+      const dd = e.data || e;
+      return dd.trace_id === ed.trace_id;
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const prevEvent = currentIndex > 0 ? validationEvents[currentIndex - 1] : null;
-  const nextEvent = currentIndex < validationEvents.length - 1 ? validationEvents[currentIndex + 1] : null;
+  const [currentIndex, setCurrentIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
+
+  // Derive the displayed event from internal index, falling back to the prop
+  const currentEvent = validationEvents[currentIndex] || event;
+  const d = currentEvent?.data || currentEvent || {};
+
+  const isValid = d && typeof d === 'object' && (d.source || d.target);
+
+  const violationFields = useMemo(() => {
+    const fields = new Set();
+    if (d?.violations) {
+      d.violations.forEach((v) => {
+        if (v.field) fields.add(v.field);
+      });
+    }
+    return fields;
+  }, [d?.violations]);
 
   const toggleEvidence = useCallback((index) => {
     setExpandedEvidence((prev) => {
@@ -122,55 +140,65 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
     }
   }, [d?.trace_id]);
 
-  const violationFields = useMemo(() => {
-    const fields = new Set();
-    if (d?.violations) {
-      d.violations.forEach((v) => {
-        if (v.field) fields.add(v.field);
-      });
+  const navigatePrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setExpandedEvidence(new Set());
+      setPayloadTab('masked');
     }
-    return fields;
-  }, [d?.violations]);
+  }, [currentIndex]);
 
-  const formatTimestamp = (ts) => {
-    if (!ts) return '-';
-    try {
-      return new Date(ts).toLocaleString('en-US', {
-        hour12: false,
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-    } catch {
-      return ts;
+  const navigateNext = useCallback(() => {
+    if (currentIndex < validationEvents.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setExpandedEvidence(new Set());
+      setPayloadTab('masked');
     }
-  };
+  }, [currentIndex, validationEvents.length]);
 
-  if (!event || !d) {
+  // Fallback for events that aren't valid SSE objects (e.g. audit DB IDs)
+  if (!isValid) {
     return (
-      <div className="empty-state">
-        <p>No event selected.</p>
+      <div>
+        <button className="back-link" onClick={onBack}>
+          <IconChevronLeft size={14} /> Back
+        </button>
+        <div className="detail-panel" style={{ marginTop: 16 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+            This handoff event is not available in the current session.
+            Check the Live Activity stream for real-time events.
+          </p>
+          <button className="btn" style={{ marginTop: 12 }} onClick={() => onNavigate('stream')}>
+            Go to Live Activity
+          </button>
+        </div>
       </div>
     );
   }
 
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < validationEvents.length - 1;
+  const payloadKeyCount = d.payload_keys?.length || (d.payload ? Object.keys(d.payload).length : 0);
+
   return (
     <div>
       <button className="back-link" onClick={onBack}>
-        <IconChevronLeft size={14} /> Back to previous view
+        <IconChevronLeft size={14} /> Back
       </button>
 
       {/* Header */}
-      <div className="page-header">
+      <div className="handoff-detail-header">
         <h2 className="handoff-detail-title">{d.source} {'\u2192'} {d.target}</h2>
         <div className="handoff-detail-meta">
           <span className={`badge ${d.passed ? 'badge-pass' : 'badge-fail'}`}>
             {d.passed ? 'PASS' : 'FAIL'}
           </span>
           <span className="handoff-meta-item">{d.contract || 'No contract'}</span>
-          <span className="handoff-meta-item">{formatTimestamp(d.timestamp)}</span>
+          {d.timestamp && (
+            <span className="handoff-meta-item">
+              {new Date(d.timestamp).toLocaleString()}
+            </span>
+          )}
           {d.duration_ms != null && (
             <span className="handoff-meta-item">{d.duration_ms.toFixed(1)}ms</span>
           )}
@@ -180,7 +208,6 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
       {/* Trace ID */}
       {d.trace_id && (
         <div className="handoff-trace-row">
-          <span className="handoff-trace-label">Trace ID</span>
           <code className="handoff-trace-id">{d.trace_id}</code>
           <button className="btn handoff-copy-btn" onClick={copyTraceId}>
             {copied ? 'Copied!' : 'Copy'}
@@ -190,14 +217,18 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
 
       {/* Payload Section */}
       {(d.payload || d.payload_keys || d.payload_preview) && (
-        <div className="detail-panel" style={{ marginTop: 16 }}>
-          <div className="card-header" style={{ padding: '14px 20px', margin: '-20px -20px 16px' }}>
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="card-header">
             <h3>
               Payload
-              {d.payload_keys && (
+              {payloadKeyCount > 0 && (
                 <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
-                  {d.payload_keys.length} key{d.payload_keys.length !== 1 ? 's' : ''}
-                  {d.payload_size != null && ` \u00b7 ${d.payload_size} bytes`}
+                  {payloadKeyCount} key{payloadKeyCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              {d.payload_size != null && (
+                <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
+                  {'\u00b7'} {d.payload_size} bytes
                 </span>
               )}
             </h3>
@@ -227,40 +258,50 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
 
           {/* Tab content */}
           <div className="handoff-tab-content">
-            {payloadTab === 'masked' && d.payload && (
-              <pre className="payload-json">
-                {formatJson(d.payload)}
-              </pre>
+            {payloadTab === 'masked' && (
+              d.payload ? (
+                <pre className="payload-json">{formatJson(d.payload)}</pre>
+              ) : (
+                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No masked payload available.</p>
+              )
             )}
-            {payloadTab === 'keys' && d.payload_keys && (
-              <div className="handoff-keys-grid">
-                {d.payload_keys.map((key) => {
-                  let cls = 'payload-key payload-key-neutral';
-                  let prefix = '';
-                  if (violationFields.has(key)) {
-                    cls = 'payload-key payload-key-violation';
-                  } else if (isSensitiveKey(key)) {
-                    cls = 'payload-key payload-key-sensitive';
-                    prefix = '\uD83D\uDD12 ';
-                  }
-                  return (
-                    <span key={key} className={cls}>
-                      {prefix}{key}
-                    </span>
-                  );
-                })}
-              </div>
+            {payloadTab === 'keys' && (
+              d.payload_keys && d.payload_keys.length > 0 ? (
+                <div className="handoff-keys-grid">
+                  {d.payload_keys.map((key) => {
+                    let cls = 'payload-key payload-key-neutral';
+                    let prefix = '';
+                    if (violationFields.has(key)) {
+                      cls = 'payload-key payload-key-violation';
+                    } else if (isSensitiveKey(key)) {
+                      cls = 'payload-key payload-key-sensitive';
+                      prefix = '\uD83D\uDD12 ';
+                    }
+                    return (
+                      <span key={key} className={cls}>
+                        {prefix}{key}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No payload keys available.</p>
+              )
             )}
-            {payloadTab === 'raw' && d.payload_preview && (
-              <pre className="payload-json" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                {d.payload_preview}
-              </pre>
+            {payloadTab === 'raw' && (
+              d.payload_preview ? (
+                <pre className="payload-json" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                  {d.payload_preview}
+                </pre>
+              ) : (
+                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No raw preview available.</p>
+              )
             )}
           </div>
 
-          {/* Payload Keys summary — always visible below tabs */}
-          {d.payload_keys && d.payload_keys.length > 0 && (
-            <div className="detail-section" style={{ marginTop: 16 }}>
+          {/* Payload Keys summary below tabs */}
+          {d.payload_keys && d.payload_keys.length > 0 && payloadTab !== 'keys' && (
+            <div className="handoff-payload-keys-footer">
               <h4>Payload Keys</h4>
               <div className="payload-keys">
                 {d.payload_keys.map((key) => {
@@ -286,10 +327,10 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
 
       {/* Violations Section */}
       {d.violations && d.violations.length > 0 && (
-        <div className="detail-panel" style={{ marginTop: 16 }}>
-          <div className="card-header" style={{ padding: '14px 20px', margin: '-20px -20px 16px' }}>
-            <h3>Violations ({d.violations.length})</h3>
-          </div>
+        <div style={{ marginTop: 20 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text-primary)' }}>
+            Violations ({d.violations.length})
+          </h3>
           <div className="handoff-violations-list">
             {d.violations.map((v, vi) => {
               const sevColor = SEVERITY_COLORS[v.severity] || SEVERITY_COLORS.medium;
@@ -324,7 +365,9 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
                       </button>
                       {evidenceExpanded && (
                         <pre className="payload-json" style={{ marginTop: 6 }}>
-                          {formatJson(v.evidence)}
+                          {typeof v.evidence === 'string'
+                            ? v.evidence
+                            : JSON.stringify(v.evidence, null, 2)}
                         </pre>
                       )}
                     </div>
@@ -336,30 +379,28 @@ export default function HandoffDetail({ event, events, onBack, onNavigate }) {
         </div>
       )}
 
-      {/* Prev / Next navigation */}
-      <div className="handoff-nav-row">
-        <button
-          className="btn"
-          disabled={!prevEvent}
-          onClick={() => prevEvent && onBack && onNavigate && onNavigate('__handoff_prev__')}
-          style={{ visibility: prevEvent ? 'visible' : 'hidden' }}
-        >
-          {'\u2190'} Previous
-        </button>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          {currentIndex >= 0
-            ? `${currentIndex + 1} of ${validationEvents.length}`
-            : ''}
-        </span>
-        <button
-          className="btn"
-          disabled={!nextEvent}
-          onClick={() => nextEvent && onBack && onNavigate && onNavigate('__handoff_next__')}
-          style={{ visibility: nextEvent ? 'visible' : 'hidden' }}
-        >
-          Next {'\u2192'}
-        </button>
-      </div>
+      {/* Previous / Next navigation */}
+      {validationEvents.length > 0 && (
+        <div className="handoff-nav">
+          <button
+            className="btn"
+            disabled={!hasPrev}
+            onClick={navigatePrev}
+          >
+            {'\u2190'} Previous
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            {currentIndex + 1} of {validationEvents.length}
+          </span>
+          <button
+            className="btn"
+            disabled={!hasNext}
+            onClick={navigateNext}
+          >
+            Next {'\u2192'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

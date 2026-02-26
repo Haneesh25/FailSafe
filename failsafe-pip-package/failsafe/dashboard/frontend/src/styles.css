@@ -1232,3 +1232,345 @@ button.btn:active {
 .json-boolean { color: var(--purple); }
 .json-null { color: var(--text-muted); }
 .json-masked { color: var(--red); opacity: 0.7; }
+
+/* ---- Handoff Detail ---- */
+
+.handoff-detail-header {
+  margin-bottom: 16px;
+}
+
+.handoff-detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.handoff-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.handoff-meta-item {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.handoff-trace-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.handoff-trace-id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  background: #f8fafc;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.handoff-copy-btn {
+  padding: 2px 10px !important;
+  font-size: 11px !important;
+}
+
+.handoff-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.handoff-tab {
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.handoff-tab:hover {
+  color: var(--text-primary);
+}
+
+.handoff-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.handoff-tab-content {
+  padding: 16px;
+}
+
+.handoff-keys-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.handoff-payload-keys-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.handoff-payload-keys-footer h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.handoff-violations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.handoff-violation-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.handoff-violation-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.handoff-violation-rule {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--cyan);
+}
+
+.handoff-violation-message {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 6px 0;
+}
+
+.handoff-violation-field {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.handoff-violation-field code {
+  font-family: var(--font-mono);
+}
+
+.handoff-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.handoff-nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Edge Payload Panel ---- */
+
+.edge-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.edge-panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.edge-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.edge-panel-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  line-height: 1;
+}
+
+.edge-panel-close:hover {
+  color: var(--text-primary);
+}
+
+.edge-panel-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.edge-panel-section h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.edge-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.edge-payload-row {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+
+.edge-payload-row:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.edge-panel-stats {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 16px;
+}
+
+/* Data Flow */
+.dataflow-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  height: calc(100vh - 120px);
+}
+.dataflow-timeline {
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.dataflow-sidebar {
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+  overflow-y: auto;
+}
+.dataflow-filter-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.dataflow-filter-bar select,
+.dataflow-filter-bar input {
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+}
+.dataflow-filter-bar label {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+}
+.trace-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.trace-group-header {
+  padding: 10px 14px;
+  background: #f8fafc;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  user-select: none;
+}
+.trace-group-header:hover { background: var(--bg-hover); }
+.trace-group-body { border-top: 1px solid var(--border); }
+.trace-handoff {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+.trace-handoff:last-child { border-bottom: none; }
+.trace-handoff:hover { background: var(--bg-hover); }
+.trace-handoff.has-violation { border-left: 3px solid var(--red); }
+.trace-handoff-agents {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.field-freq-list { margin-top: 8px; }
+.field-freq {
+  padding: 5px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+.field-freq:hover { background: var(--bg-hover); margin: 0 -4px; padding-left: 4px; padding-right: 4px; border-radius: 3px; }
+.field-freq-name { font-family: var(--font-mono); font-size: 11px; }
+.field-freq-count { color: var(--text-muted); font-size: 11px; }
+.field-freq-flagged .field-freq-name { color: var(--red); font-weight: 600; }
+.field-freq-flagged .field-freq-count { color: var(--red); }
+.sensitive-banner {
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #92400e;
+}
+.dataflow-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}

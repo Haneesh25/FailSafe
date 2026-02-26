@@ -1,5 +1,13 @@
 import React, { useMemo } from 'react';
-import { IconCheckCircle, IconAlert, IconNodes, IconActivity, IconShield } from './Icons.jsx';
+import { IconCheckCircle, IconAlert, IconNodes, IconActivity, IconShield, IconDataFlow } from './Icons.jsx';
+
+const SENSITIVE_PATTERNS = [
+  'ssn', 'password', 'passwd', 'secret', 'token', 'api_key', 'apikey',
+  'credit_card', 'card_number', 'account_number', 'tax_id', 'private_key',
+];
+
+const isSensitiveKey = (key) =>
+  SENSITIVE_PATTERNS.some((p) => key.toLowerCase().includes(p));
 
 function formatTimeAgo(ts) {
   if (!ts) return '';
@@ -18,7 +26,7 @@ function formatTimeAgo(ts) {
 
 export default function Overview({
   agents, validations, events, coverage, contracts, connected,
-  onNavigate, onViolationClick,
+  onNavigate, onHandoffClick,
 }) {
   const metrics = useMemo(() => {
     const total = validations.length;
@@ -139,23 +147,52 @@ export default function Overview({
             </div>
           ) : (
             <div className="card-body" style={{ padding: 0 }}>
-              {metrics.recentFailures.map((v, i) => (
-                <div
-                  key={v.handoff_id || i}
-                  className="overview-failure-row"
-                  onClick={() => onViolationClick && onViolationClick(v.handoff_id)}
-                >
-                  <span className="overview-failure-agents">
-                    {v.source} → {v.target}
-                  </span>
-                  <span className="overview-failure-contract">
-                    {v.contract_name || 'No contract'}
-                  </span>
-                  <span className="overview-failure-time">
-                    {formatTimeAgo(v.timestamp)}
-                  </span>
-                </div>
-              ))}
+              {metrics.recentFailures.map((v, i) => {
+                const matchingEvent = events.find(e => e.data?.trace_id === v.trace_id);
+                const payloadKeys = matchingEvent?.data?.payload_keys || [];
+                const violationFieldSet = new Set();
+                if (matchingEvent?.data?.violations) {
+                  matchingEvent.data.violations.forEach((viol) => {
+                    if (viol.field) viol.field.split(', ').forEach((f) => violationFieldSet.add(f.trim()));
+                  });
+                }
+                return (
+                  <div
+                    key={v.handoff_id || i}
+                    className="overview-failure-row"
+                    onClick={() => {
+                      if (matchingEvent && onHandoffClick) onHandoffClick(matchingEvent);
+                    }}
+                  >
+                    <span className="overview-failure-agents">
+                      {v.source} → {v.target}
+                    </span>
+                    <span className="overview-failure-contract">
+                      {v.contract_name || 'No contract'}
+                      {payloadKeys.length > 0 && (
+                        <span className="payload-keys" style={{ display: 'inline-flex', marginLeft: 8, gap: 3 }}>
+                          {payloadKeys.slice(0, 4).map((key) => {
+                            let cls = 'payload-key payload-key-neutral';
+                            if (violationFieldSet.has(key)) {
+                              cls = 'payload-key payload-key-violation';
+                            } else if (isSensitiveKey(key)) {
+                              cls = 'payload-key payload-key-sensitive';
+                            }
+                            return (
+                              <span key={key} className={cls} style={{ fontSize: 10, padding: '0px 5px' }}>
+                                {key}
+                              </span>
+                            );
+                          })}
+                        </span>
+                      )}
+                    </span>
+                    <span className="overview-failure-time">
+                      {formatTimeAgo(v.timestamp)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -173,6 +210,13 @@ export default function Overview({
             <div>
               <strong>Live Activity</strong>
               <span>{events.filter(e => e.type === 'validation').length} events this session</span>
+            </div>
+          </div>
+          <div className="quick-link-card" onClick={() => onNavigate('dataflow')}>
+            <div className="quick-link-icon"><IconDataFlow size={20} /></div>
+            <div>
+              <strong>Data Flow</strong>
+              <span>Explore what data moves between agents</span>
             </div>
           </div>
           <div className="quick-link-card" onClick={() => onNavigate('coverage')}>
